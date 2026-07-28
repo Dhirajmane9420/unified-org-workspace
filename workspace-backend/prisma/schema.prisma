@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String               @id @default(uuid())
+  email        String               @unique
+  passwordHash String
+  memberships  UserOrgMembership[]
+  pullRequests PullRequest[]        @relation("Author")
+  reviews      PrReviewer[]
+  auditLogs    AuditLog[]
+}
+
+model Organization {
+  id                  String               @id @default(uuid())
+  name                String
+  memberships         UserOrgMembership[]
+  tickets             Ticket[]
+  pullRequests        PullRequest[]
+  initiatedConnections Connection[]        @relation("InitiatorOrg")
+  targetConnections   Connection[]        @relation("TargetOrg")
+  sharedItems         SharedItem[]
+  auditLogs           AuditLog[]
+}
+
+model UserOrgMembership {
+  userId         String
+  organizationId String
+  role           String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+}
+
+model Connection {
+  id             String       @id @default(uuid())
+  initiatorOrgId String
+  targetOrgId    String
+  status         String
+  initiatorOrg   Organization @relation("InitiatorOrg", fields: [initiatorOrgId], references: [id], onDelete: Cascade)
+  targetOrg      Organization @relation("TargetOrg", fields: [targetOrgId], references: [id], onDelete: Cascade)
+}
+
+model Ticket {
+  id             String       @id @default(uuid())
+  organizationId String
+  title          String
+  description    String
+  status         String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sharedWith     SharedItem[]
+  comments       Comment[]
+}
+
+model SharedItem {
+  id           String       @id @default(uuid())
+  ticketId     String
+  sharedWithId String
+  ticket       Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sharedWith   Organization @relation(fields: [sharedWithId], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id       String @id @default(uuid())
+  ticketId String
+  content  String
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model PullRequest {
+  id             String       @id @default(uuid())
+  organizationId String
+  authorId       String
+  title          String
+  description    String
+  status         String
+  currentVersion Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  author         User         @relation("Author", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewers      PrReviewer[]
+  versions       PrVersion[]
+}
+
+model PrReviewer {
+  id            String      @id @default(uuid())
+  pullRequestId String
+  reviewerId    String
+  hasApproved   Boolean     @default(false)
+  changesReq    Boolean     @default(false)
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  reviewer      User        @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([pullRequestId, reviewerId])
+}
+
+model PrVersion {
+  id            String      @id @default(uuid())
+  pullRequestId String
+  versionNumber Int
+  title         String
+  description   String
+  rawDiff       String
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  actionType     String
+  metadata       Json
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
