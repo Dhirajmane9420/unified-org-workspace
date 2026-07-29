@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.js';
 import ticketRoutes from './routes/tickets.js';
 import pullRequestRoutes from './routes/pullRequests.js';
 import auditRoutes from './routes/audit.js';
+import connectionRoutes from './routes/connections.js';
+import { initializeScheduler } from './workers/cronJob.js';
 
 // Load environmental credentials
 dotenv.config();
@@ -52,6 +54,7 @@ app.use('/api/v1/pull-requests', pullRequestRoutes);
 // Audit Log Historical Module Service Routes (Dashboard 2)
 app.use('/api/v1/audit-logs', auditRoutes);
 
+app.use('/api/v1/connections', connectionRoutes);
 
 // 3. SECURED SYSTEM TEST ROUTE
 // Verifies that your single identity layer and tenant guards function seamlessly
@@ -69,6 +72,8 @@ app.use((err, req, res, next) => {
   console.error('❌ Server Error Context:', err.message);
   res.status(500).json({ error: 'Internal server operational error occurred' });
 });
+
+initializeScheduler();
 
 // 5. BOOT ENGINE
 app.listen(PORT, () => {

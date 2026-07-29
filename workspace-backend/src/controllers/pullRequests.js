@@ -201,3 +201,54 @@ export const updatePullRequest = async (req, res, next) => {
     next(err);
   }
 };
+
+
+// Append this method to your existing src/controllers/pullRequests.js file
+
+export const getPullRequestDiff = async (req, res, next) => {
+  const { id } = req.params;
+  const { targetVersion } = req.query; // targetVersion indicates the version number to check
+  const currentOrgId = req.activeOrgId;
+
+  if (!targetVersion) {
+    return res.status(400).json({ error: 'Missing targetVersion query parameter string' });
+  }
+
+  try {
+    // 1. Defend authorization boundary using primary BOLA filter
+    const pr = await prisma.pullRequest.findUnique({ where: { id } });
+    if (!pr || pr.organizationId !== currentOrgId) {
+      return res.status(403).json({ error: 'Access unauthorized for this pull request resource' });
+    }
+
+    const versionNum = parseInt(targetVersion, 10);
+
+    // 2. Fetch target snapshot alongside its mathematical predecessor
+    const versions = await prisma.prVersion.findMany({
+      where: {
+        pullRequestId: id,
+        versionNumber: { in: [versionNum, versionNum - 1] }
+      },
+      orderBy: { versionNumber: 'asc' }
+    });
+
+    const currentSnapshot = versions.find(v => v.versionNumber === versionNum);
+    const previousSnapshot = versions.find(v => v.versionNumber === versionNum - 1);
+
+    if (!currentSnapshot) {
+      return res.status(404).json({ error: 'Requested version snapshot record not found' });
+    }
+
+    res.status(200).json({
+      pullRequestId: id,
+      comparingVersion: versionNum,
+      baseVersion: previousSnapshot ? versionNum - 1 : 'INITIAL_COMMIT',
+      diffView: {
+        currentDiffText: currentSnapshot.rawDiff,
+        previousDiffText: previousSnapshot ? previousSnapshot.rawDiff : ''
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
