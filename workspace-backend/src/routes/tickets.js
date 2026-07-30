@@ -2,20 +2,32 @@ import express from 'express';
 import { verifyToken } from '../middlewares/auth.js';
 import { tenantGuard } from '../middlewares/tenantGuard.js';
 import { authorizeRoles } from '../middlewares/rbacGuard.js';
-import { getTickets, getTicketById, createTicket } from '../controllers/tickets.js';
+import { 
+  getTickets, 
+  getTicketById, 
+  createTicket, 
+  updateTicket, 
+  deleteTicket,
+  createComment,
+  addAttachment
+} from '../controllers/tickets.js';
 
 const router = express.Router();
 
 router.use(verifyToken);
 router.use(tenantGuard);
 
-// 1. Both Native Agents, Reviewers, and Org Admins can read the ticket queue
+// Existing pathways
 router.get('/', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT', 'REVIEWER']), getTickets);
-
-// 2. Cross-Org Guests can fetch individual items if explicitly shared
 router.get('/:id', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT', 'REVIEWER', 'GUEST']), getTicketById);
-
-// 3. Only internal staff can generate new tickets
 router.post('/', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT']), createTicket);
+
+// New full CRUD compliance pathways
+router.patch('/:id', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT']), updateTicket);
+router.delete('/:id', authorizeRoles(['ORG_ADMIN']), deleteTicket);
+
+// Comment & Attachment pathways
+router.post('/:id/comments', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT', 'REVIEWER', 'GUEST']), createComment);
+router.post('/:id/attachments', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT', 'REVIEWER']), addAttachment);
 
 export default router;

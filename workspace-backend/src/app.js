@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { verifyToken } from './middlewares/auth.js';
 import { tenantGuard } from './middlewares/tenantGuard.js';
 import authRoutes from './routes/auth.js';
@@ -9,9 +9,7 @@ import pullRequestRoutes from './routes/pullRequests.js';
 import auditRoutes from './routes/audit.js';
 import connectionRoutes from './routes/connections.js';
 import { initializeScheduler } from './workers/cronJob.js';
-
-// Load environmental credentials
-dotenv.config();
+import { runDigestGenerationCycle } from './workers/cronJob.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,7 +27,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, or internal postman testing)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.indexOf(origin) !== -1 || /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
       return callback(null, true);
     } else {
       return callback(new Error('Blocked by Cross-Origin Resource Sharing Policy'));
@@ -69,11 +67,19 @@ app.get('/api/v1/protected-workspace', verifyToken, tenantGuard, (req, res) => {
 
 // 4. GLOBAL ERROR HANDLER
 app.use((err, req, res, next) => {
-  console.error('❌ Server Error Context:', err.message);
+  console.error('❌ Server Error Context:', err);
   res.status(500).json({ error: 'Internal server operational error occurred' });
 });
 
+
+
 initializeScheduler();
+
+// TEMP TEST HOOK: Remove this after verifying it runs smoothly!
+if (process.env.NODE_ENV !== 'production') {
+  console.log("🛠️ Dev Mode: Forcing an immediate background digest cycle test...");
+  runDigestGenerationCycle().catch(err => console.error("❌ Immediate test crashed:", err));
+}
 
 // 5. BOOT ENGINE
 app.listen(PORT, () => {

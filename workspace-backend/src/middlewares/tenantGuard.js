@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
@@ -24,7 +24,7 @@ export async function tenantGuard(req, res, next) {
   if (!membership) {
     return res.status(403).json({ error: 'Access unauthorized for this organization context' });
   }
-  
+
   req.currentRole = membership.role;
   next();
 }

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/app.js",
-    "dev": "nodemon --exec tsx src/app.js",
+    "dev": "concurrently \"npx prisma studio\" \"nodemon --exec tsx src/app.js\"",
     "db:seed": "tsx prisma/seed.js"
   },
   "prisma": {
@@ -16,6 +16,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/genai": "^2.13.0",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "@prisma/pg-worker": "^6.9.0",
@@ -27,6 +28,7 @@
     "redis": "^6.1.0"
   },
   "devDependencies": {
+    "concurrently": "^10.0.4",
     "nodemon": "^3.1.14",
     "prisma": "^7.9.1",
     "tsx": "^4.23.1"

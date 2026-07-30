@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 
@@ -118,10 +118,10 @@ export const revokeConnection = async (req, res, next) => {
 
     await prisma.$transaction(async (tx) => {
       await tx.connection.delete({ where: { id } });
-      
+
       // Cascade delete shared items between these organizations to enforce clean severance
       const partnerOrgId = connection.initiatorOrgId === currentOrgId ? connection.targetOrgId : connection.initiatorOrgId;
-      
+
       await tx.sharedItem.deleteMany({
         where: {
           sharedWithId: partnerOrgId,
@@ -140,6 +140,54 @@ export const revokeConnection = async (req, res, next) => {
     });
 
     res.status(200).json({ message: 'Cross-org workspace partnership successfully revoked and severed' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 4. Retrieve connection requests and contracts
+export const getConnections = async (req, res, next) => {
+  const currentOrgId = req.activeOrgId;
+  try {
+    const inboundPending = await prisma.connection.findMany({
+      where: {
+        targetOrgId: currentOrgId,
+        status: 'PENDING'
+      },
+      include: {
+        initiatorOrg: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    const outboundPending = await prisma.connection.findMany({
+      where: {
+        initiatorOrgId: currentOrgId,
+        status: 'PENDING'
+      },
+      include: {
+        targetOrg: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    const activeConnections = await prisma.connection.findMany({
+      where: {
+        status: 'APPROVED',
+        OR: [
+          { initiatorOrgId: currentOrgId },
+          { targetOrgId: currentOrgId }
+        ]
+      },
+      include: {
+        initiatorOrg: { select: { id: true, name: true } },
+        targetOrg: { select: { id: true, name: true } }
+      }
+    });
+
+    res.status(200).json({ inboundPending, outboundPending, activeConnections });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
+
 }
 
 datasource db {
@@ -15,12 +15,14 @@ model User {
   pullRequests PullRequest[]        @relation("Author")
   reviews      PrReviewer[]
   auditLogs    AuditLog[]
+  comments     Comment[]
 }
 
 model Organization {
   id                  String               @id @default(uuid())
   name                String
   memberships         UserOrgMembership[]
+  featureFlags        Json                @default("{}")
   tickets             Ticket[]
   pullRequests        PullRequest[]
   initiatedConnections Connection[]        @relation("InitiatorOrg")
@@ -44,6 +46,7 @@ model Connection {
   initiatorOrgId String
   targetOrgId    String
   status         String
+  createdAt      DateTime     @default(now())
   initiatorOrg   Organization @relation("InitiatorOrg", fields: [initiatorOrgId], references: [id], onDelete: Cascade)
   targetOrg      Organization @relation("TargetOrg", fields: [targetOrgId], references: [id], onDelete: Cascade)
 }
@@ -54,9 +57,11 @@ model Ticket {
   title          String
   description    String
   status         String
+  createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   sharedWith     SharedItem[]
   comments       Comment[]
+  attachments    Attachment[]
 }
 
 model SharedItem {
@@ -68,10 +73,13 @@ model SharedItem {
 }
 
 model Comment {
-  id       String @id @default(uuid())
-  ticketId String
-  content  String
-  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model PullRequest {
@@ -82,6 +90,7 @@ model PullRequest {
   description    String
   status         String
   currentVersion Int
+  createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   author         User         @relation("Author", fields: [authorId], references: [id], onDelete: Cascade)
   reviewers      PrReviewer[]
@@ -107,6 +116,7 @@ model PrVersion {
   title         String
   description   String
   rawDiff       String
+  createdAt     DateTime    @default(now())
   pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
 }
 
@@ -116,7 +126,17 @@ model AuditLog {
   userId         String
   actionType     String
   metadata       Json
+  createdAt      DateTime     @default(now())
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  ticketId  String
+  filename  String
+  url       String
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
 

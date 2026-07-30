@@ -1,10 +1,10 @@
-import { defineConfig } from '@prisma/config'
+import { defineConfig, env } from 'prisma/config' // Added "env" import here
 import 'dotenv/config'
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: env('DATABASE_URL'), // Swapped out process.env for the native helper
   },
   migrations: {
     // Tells Prisma to use standard Node to run your JS seed file

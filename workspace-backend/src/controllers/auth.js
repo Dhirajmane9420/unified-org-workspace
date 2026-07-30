@@ -1,4 +1,5 @@
-import { PrismaClient } from '../../generated/prisma/client.js';
+
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import crypto from 'crypto';
@@ -14,6 +15,9 @@ function hashPassword(password) {
 }
 
 export const register = async (req, res, next) => {
+  // 1. Debug exactly what the frontend is sending to the server
+  console.log("📥 Registration Payload Received:", req.body);
+
   const { email, password, orgName } = req.body;
 
   if (!email || !password || !orgName) {
@@ -21,7 +25,13 @@ export const register = async (req, res, next) => {
   }
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // 2. FIXED: Use findFirst instead of findUnique to circumvent driver invocation strictness
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email.trim().toLowerCase() // Normalize inputs to prevent indexing mismatches
+      }
+    });
+
     if (existingUser) {
       return res.status(400).json({ error: 'A user with this email already exists' });
     }
@@ -29,7 +39,10 @@ export const register = async (req, res, next) => {
     const result = await prisma.$transaction(async (tx) => {
       const newOrg = await tx.organization.create({ data: { name: orgName } });
       const newUser = await tx.user.create({
-        data: { email, passwordHash: hashPassword(password) }
+        data: {
+          email: email.trim().toLowerCase(),
+          passwordHash: hashPassword(password)
+        }
       });
       await tx.userOrgMembership.create({
         data: { userId: newUser.id, organizationId: newOrg.id, role: 'ORG_ADMIN' }
@@ -110,6 +123,27 @@ export const logout = async (req, res, next) => {
       }
     });
     res.status(200).json({ message: 'Global session clearance executed. Token signature invalidated.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Fetch the structured feature flag configurations for the active tenant context
+export const getFeatureFlags = async (req, res, next) => {
+  const currentOrgId = req.activeOrgId;
+
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: currentOrgId },
+      select: { featureFlags: true }
+    });
+
+    if (!org) {
+      return res.status(404).json({ error: 'Organization workspace context not found.' });
+    }
+
+    // Returns the custom flags object (e.g., {"enableAiSummaries": true})
+    res.status(200).json(org.featureFlags || {});
   } catch (err) {
     next(err);
   }

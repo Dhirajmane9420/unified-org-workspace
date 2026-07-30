@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { generateWorkspaceDigest } from '../workers/digestTracker.js';
@@ -7,19 +7,44 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+// Helper to construct database queries based on request filters
+const buildFilterConditions = (currentOrgId, query) => {
+  const { actionType, userId, userEmail, startDate, endDate } = query;
+  const filterConditions = { organizationId: currentOrgId };
+
+  if (actionType) {
+    filterConditions.actionType = String(actionType);
+  }
+
+  if (userId) {
+    filterConditions.userId = String(userId);
+  } else if (userEmail) {
+    filterConditions.user = { email: String(userEmail) };
+  }
+
+  if (startDate || endDate) {
+    filterConditions.createdAt = {};
+    if (startDate) {
+      filterConditions.createdAt.gte = new Date(startDate);
+    }
+    if (endDate) {
+      filterConditions.createdAt.lte = new Date(endDate);
+    }
+  }
+
+  return filterConditions;
+};
+
 export const getAuditLogs = async (req, res, next) => {
   const currentOrgId = req.activeOrgId;
-  const { actionType, limit = 50, page = 1 } = req.query;
+  const { limit = 50, page = 1 } = req.query;
 
   try {
     const parsedLimit = parseInt(limit, 10);
     const parsedPage = parseInt(page, 10);
     const skip = (parsedPage - 1) * parsedLimit;
 
-    const filterConditions = { organizationId: currentOrgId };
-    if (actionType) {
-      filterConditions.actionType = String(actionType);
-    }
+    const filterConditions = buildFilterConditions(currentOrgId, req.query);
 
     const [logs, totalCount] = await prisma.$transaction([
       prisma.auditLog.findMany({
@@ -60,15 +85,15 @@ export const getAiDigest = async (req, res, next) => {
   }
 };
 
-// Append this method to your existing src/controllers/audit.js file
-
 export const exportAuditLogsToCsv = async (req, res, next) => {
   const currentOrgId = req.activeOrgId;
 
   try {
-    // 1. Fetch all historical event rows tied to this tenant context
+    const filterConditions = buildFilterConditions(currentOrgId, req.query);
+
+    // 1. Fetch all historical event rows tied to this tenant context matching the filters
     const logs = await prisma.auditLog.findMany({
-      where: { organizationId: currentOrgId },
+      where: filterConditions,
       include: { user: { select: { email: true } } },
       orderBy: { createdAt: 'desc' }
     });
