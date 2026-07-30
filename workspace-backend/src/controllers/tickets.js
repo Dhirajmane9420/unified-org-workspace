@@ -289,3 +289,66 @@ export const addAttachment = async (req, res, next) => {
     next(err);
   }
 };
+
+// 8. Share ticket with partner organization
+export const shareTicket = async (req, res, next) => {
+  const { id } = req.params;
+  const { targetOrgId } = req.body;
+  const currentOrgId = req.activeOrgId;
+  const currentUserId = req.user.id;
+
+  if (!targetOrgId) {
+    return res.status(400).json({ error: 'Missing targetOrgId parameter' });
+  }
+
+  try {
+    // 1. Fetch the ticket to ensure it belongs to the active organization
+    const ticket = await prisma.ticket.findUnique({
+      where: { id }
+    });
+
+    if (!ticket || ticket.organizationId !== currentOrgId) {
+      return res.status(403).json({ error: 'Access unauthorized to share this ticket' });
+    }
+
+    // 2. Check if a connection exists between the two organizations
+    const connection = await prisma.connection.findFirst({
+      where: {
+        OR: [
+          { initiatorOrgId: currentOrgId, targetOrgId, status: 'APPROVED' },
+          { initiatorOrgId: targetOrgId, targetOrgId: currentOrgId, status: 'APPROVED' }
+        ]
+      }
+    });
+
+    if (!connection) {
+      return res.status(400).json({ error: 'No approved connection contract exists with target organization' });
+    }
+
+    // 3. Create the sharedItem mapping
+    const sharedItem = await prisma.$transaction(async (tx) => {
+      const mapping = await tx.sharedItem.create({
+        data: {
+          ticketId: id,
+          sharedWithId: targetOrgId
+        }
+      });
+
+      // 4. Log the action to the append-only Audit Log
+      await tx.auditLog.create({
+        data: {
+          organizationId: currentOrgId,
+          userId: currentUserId,
+          actionType: 'CROSS_ORG_SHARE',
+          metadata: { ticketId: id, targetOrgId }
+        }
+      });
+
+      return mapping;
+    });
+
+    res.status(201).json({ success: true, sharedItem });
+  } catch (err) {
+    next(err);
+  }
+};

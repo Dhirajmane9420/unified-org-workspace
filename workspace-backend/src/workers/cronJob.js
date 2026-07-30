@@ -25,6 +25,8 @@ export async function runDigestGenerationCycle() {
       }
     });
 
+    const orgDigestCache = new Map();
+
     for (const user of users) {
       // Skip users without an assigned active workspace
       if (!user.memberships || user.memberships.length === 0) continue;
@@ -33,8 +35,16 @@ export async function runDigestGenerationCycle() {
         const orgId = membership.organizationId;
 
         try {
-          // Generate the isolated, BOLA-compliant context summary
-          const generatedText = await generateWorkspaceDigest(orgId);
+          let generatedText;
+          if (orgDigestCache.has(orgId)) {
+            generatedText = orgDigestCache.get(orgId);
+          } else {
+            // Generate the isolated, BOLA-compliant context summary
+            generatedText = await generateWorkspaceDigest(orgId);
+            orgDigestCache.set(orgId, generatedText);
+            // Throttling delay to respect free-tier TPM/RPM quotas
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
 
           // 2. Persist the compiled snapshot to an In-App Notification tracking table
           await prisma.auditLog.create({

@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ShieldAlert, CheckCircle2, Network, TrendingUp, Lock, ShieldCheck } from 'lucide-react';
 
-export default function AuthView() {
+export default function AuthView({ initialMode = 'login', onBackToLanding }) {
   const { loginUser } = useWorkspace();
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
+
+  useEffect(() => {
+    setIsLogin(initialMode === 'login');
+  }, [initialMode]);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success'
 
@@ -58,7 +62,7 @@ export default function AuthView() {
   };
 
   return (
-    <div className="bg-[#f7f9fb] text-[#191c1e] font-sans min-h-screen flex flex-col overflow-x-hidden relative select-none">
+    <div className="bg-[#FAF9F6] text-[#121212] font-sans min-h-screen flex flex-col overflow-x-hidden relative select-none">
       
       {/* Dynamic Embedded Styles for Custom Animated Layout Assets */}
       <style>{`
@@ -81,9 +85,9 @@ export default function AuthView() {
 
       {/* Top Application Header Shell Wrapper */}
       <header className="absolute top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-transparent">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer select-none hover:opacity-85 transition-opacity" onClick={onBackToLanding}>
           <ShieldAlert className="text-[#3525cd] w-7 h-7 stroke-[2.5]" />
-          <h1 className="text-xl font-bold tracking-tight text-[#191c1e]">Unified Workspace</h1>
+          <h1 className="text-xl font-bold tracking-tight text-[#121212]">Unified Workspace</h1>
         </div>
       </header>
 

@@ -15,6 +15,13 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
  * @param {string} organizationId - Target tenant workspace identifier
  */
 export async function generateWorkspaceDigest(organizationId) {
+  let contextMap = {
+    openSupportTickets: 0,
+    recentTicketTitles: [],
+    pendingCodeReviews: 0,
+    recentPullRequests: []
+  };
+
   try {
     console.log(`🤖 Starting background AI analysis for organization context: ${organizationId}`);
 
@@ -54,7 +61,7 @@ export async function generateWorkspaceDigest(organizationId) {
     });
 
     // 3. Compile structural context payload map
-    const contextMap = {
+    contextMap = {
       openSupportTickets: openTicketsCount,
       recentTicketTitles: recentTickets.map(t => `[${t.status}] ${t.title}`),
       pendingCodeReviews: pendingPRsCount,
@@ -87,7 +94,8 @@ export async function generateWorkspaceDigest(organizationId) {
 
   } catch (error) {
     console.error('❌ Failed to execute AI workspace digest tracking sequence:', error.message);
-    throw error;
+    console.warn('⚠️ Falling back to local fallback digest builder.');
+    return buildMockDigest(contextMap);
   }
 }
 

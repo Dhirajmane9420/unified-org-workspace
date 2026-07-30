@@ -100,6 +100,15 @@ export function WorkspaceProvider({ children }) {
   };
 
   /**
+   * Dynamically adds a new organization to the local list and switches to it
+   */
+  const addWorkspace = (orgName, organizationId, role = 'ORG_ADMIN') => {
+    const newWs = { organizationId, orgName, role };
+    setAvailableWorkspaces(prev => [...prev, newWs]);
+    setActiveWorkspace(newWs);
+  };
+
+  /**
    * Automated Fetch Wrapper: Securely injects JWT and Multi-Tenant scoping headers[cite: 1]
    */
   const authenticatedFetch = async (url, options = {}) => {
@@ -122,6 +131,7 @@ export function WorkspaceProvider({ children }) {
       loginUser,
       logoutUser,
       switchWorkspace,
+      addWorkspace,
       authenticatedFetch
     }}>
       {children}

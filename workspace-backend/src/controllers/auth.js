@@ -114,14 +114,28 @@ export const logout = async (req, res, next) => {
 
   try {
     await revokeTokenGlobally(token, 86400);
-    await prisma.auditLog.create({
-      data: {
-        organizationId: req.activeOrgId || 'GLOBAL_CONTEXT_DETACH',
-        userId: req.user.id,
-        actionType: 'USER_LOGOUT',
-        metadata: { clientExitStatus: 'SUCCESS' }
+
+    let orgId = req.activeOrgId;
+    if (!orgId) {
+      const membership = await prisma.userOrgMembership.findFirst({
+        where: { userId: req.user.id }
+      });
+      if (membership) {
+        orgId = membership.organizationId;
       }
-    });
+    }
+
+    if (orgId) {
+      await prisma.auditLog.create({
+        data: {
+          organizationId: orgId,
+          userId: req.user.id,
+          actionType: 'USER_LOGOUT',
+          metadata: { clientExitStatus: 'SUCCESS' }
+        }
+      });
+    }
+
     res.status(200).json({ message: 'Global session clearance executed. Token signature invalidated.' });
   } catch (err) {
     next(err);

@@ -37,26 +37,26 @@ export default function WorkspaceStatusPanel() {
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-850 rounded-2xl p-4 sm:p-5 shadow-lg grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 animate-fadeIn">
+    <div className="bg-white border border-zinc-200/50 rounded-xl p-4 sm:p-5 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 animate-fadeIn">
       {/* Col 1: Active Workspace Metadata */}
       <div className="space-y-1.5 flex flex-col justify-center">
-        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Operational Tenant</span>
+        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Operational Tenant</span>
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-black text-white truncate max-w-[200px]">
+          <h3 className="text-sm font-bold text-[#121212] truncate max-w-[200px]">
             {activeWorkspace?.orgName || 'Loading Workspace...'}
           </h3>
-          <span className="text-[9px] font-mono text-indigo-400 uppercase tracking-wider bg-indigo-950/40 px-1.5 py-0.5 rounded border border-indigo-900/60 font-black">
+          <span className="text-[9px] font-mono text-indigo-600 uppercase tracking-wider bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 font-semibold">
             {activeWorkspace?.role}
           </span>
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-[10px] font-mono text-slate-400 truncate max-w-[200px]">
+          <span className="text-[10px] font-mono text-zinc-500 truncate max-w-[200px]">
             ID: {activeWorkspace?.organizationId || 'N/A'}
           </span>
           {activeWorkspace?.organizationId && (
             <button
               onClick={copyOrgId}
-              className="p-1 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-300 transition-colors text-[10px] font-semibold border border-transparent hover:border-slate-700"
+              className="px-1.5 py-0.5 hover:bg-zinc-50 rounded text-zinc-500 hover:text-zinc-700 transition-colors text-[10px] font-semibold border border-zinc-200/60 cursor-pointer"
               title="Copy Org ID"
             >
               {copied ? '✓ Copied' : '📋 Copy'}
@@ -66,19 +66,19 @@ export default function WorkspaceStatusPanel() {
       </div>
 
       {/* Col 2: Active User Identity Context */}
-      <div className="space-y-1 flex flex-col justify-center border-t border-slate-850/60 pt-3 md:pt-0 md:border-t-0 md:border-x md:border-slate-850/60 md:px-6">
-        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">Security Context</span>
-        <span className="text-xs font-semibold text-slate-200 truncate block">
+      <div className="space-y-1 flex flex-col justify-center border-t border-zinc-200/30 pt-3 md:pt-0 md:border-t-0 md:border-x md:border-zinc-200/30 md:px-6">
+        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">Security Context</span>
+        <span className="text-xs font-semibold text-zinc-700 truncate block">
           {user?.email || 'System Operator'}
         </span>
-        <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1 mt-0.5">
+        <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-1 mt-0.5">
           🔑 Single Identity Shield Enabled
         </span>
       </div>
 
       {/* Col 3: Live System Health Monitor */}
-      <div className="space-y-1 flex flex-col justify-center border-t border-slate-850/60 pt-3 md:pt-0 md:border-t-0">
-        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">API Operational Status</span>
+      <div className="space-y-1 flex flex-col justify-center border-t border-zinc-200/30 pt-3 md:pt-0 md:border-t-0">
+        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">API Operational Status</span>
         <div className="flex items-center gap-2 mt-0.5">
           <span className={`h-2 w-2 rounded-full ${
             apiHealth === 'healthy' 
@@ -87,11 +87,11 @@ export default function WorkspaceStatusPanel() {
                 ? 'bg-rose-500 shadow-md shadow-rose-500/20 animate-pulse' 
                 : 'bg-amber-500 animate-pulse'
           }`} />
-          <span className="text-xs font-bold text-slate-200 capitalize">
+          <span className="text-xs font-bold text-zinc-700 capitalize">
             {apiHealth === 'healthy' ? 'Operational Status Healthy' : apiHealth === 'unhealthy' ? 'Unreachable Services' : 'Verifying Network...'}
           </span>
         </div>
-        <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
+        <span className="text-[10px] font-mono text-zinc-500 block mt-0.5">
           {lastCheck ? `Last Verification: ${lastCheck}` : 'Polling operational matrices...'}
         </span>
       </div>

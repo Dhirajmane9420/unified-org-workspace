@@ -9,7 +9,8 @@ import {
   updateTicket, 
   deleteTicket,
   createComment,
-  addAttachment
+  addAttachment,
+  shareTicket
 } from '../controllers/tickets.js';
 
 const router = express.Router();
@@ -29,5 +30,6 @@ router.delete('/:id', authorizeRoles(['ORG_ADMIN']), deleteTicket);
 // Comment & Attachment pathways
 router.post('/:id/comments', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT', 'REVIEWER', 'GUEST']), createComment);
 router.post('/:id/attachments', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT', 'REVIEWER']), addAttachment);
+router.post('/:id/share', authorizeRoles(['ORG_ADMIN', 'SUPPORT_AGENT']), shareTicket);
 
 export default router;

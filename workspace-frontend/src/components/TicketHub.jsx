@@ -123,11 +123,11 @@ export default function TicketHub() {
       {/* Left 1 Column: Ticket Streams & Management */}
       <div className={`lg:col-span-1 space-y-4 ${mobileView === 'list' ? 'block' : 'hidden lg:block'}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Workspace Tickets</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-550">Workspace Tickets</h3>
           {activeWorkspace?.role !== 'GUEST' && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white shadow transition-all"
+              className="px-3.5 py-1.5 text-xs font-semibold bg-[#121212] hover:bg-zinc-800 rounded-lg text-[#FAF9F6] shadow-sm cursor-pointer transition-all active:scale-[0.98]"
             >
               + File Ticket
             </button>
@@ -135,9 +135,9 @@ export default function TicketHub() {
         </div>
 
         {loading ? (
-          <div className="text-xs text-slate-500 font-mono">Syncing streaming queues...</div>
+          <div className="text-xs text-zinc-400 font-mono">Syncing streaming queues...</div>
         ) : tickets.length === 0 ? (
-          <div className="p-4 bg-slate-900 rounded-xl border border-slate-850 text-xs text-slate-500 text-center">
+          <div className="p-4 bg-white rounded-xl border border-zinc-200/50 text-xs text-zinc-400 text-center">
             No active tickets matching this tenant matrix.
           </div>
         ) : (
@@ -148,19 +148,19 @@ export default function TicketHub() {
                 onClick={() => handleSelectTicket(ticket)}
                 className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
                   selectedTicket?.id === ticket.id
-                    ? 'bg-indigo-950/30 border-indigo-500/50 shadow-md shadow-indigo-600/5'
-                    : 'bg-slate-900 border-slate-850 hover:border-slate-700'
+                    ? 'bg-indigo-50/40 border-indigo-200 shadow-sm'
+                    : 'bg-white border-zinc-200/50 hover:border-zinc-300'
                 }`}
               >
                 <div className="flex justify-between items-start gap-2">
-                  <h4 className="text-xs font-bold text-white truncate">{ticket.title}</h4>
-                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
-                    ticket.status === 'OPEN' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/60' : 'bg-slate-800 text-slate-400'
+                  <h4 className="text-xs font-bold text-zinc-800 truncate">{ticket.title}</h4>
+                  <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider ${
+                    ticket.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-zinc-100 text-zinc-500'
                   }`}>
                     {ticket.status}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                <p className="text-[11px] text-zinc-500 line-clamp-2 mt-1 leading-relaxed">
                   {ticket.description}
                 </p>
               </div>
@@ -172,33 +172,33 @@ export default function TicketHub() {
       {/* Right 2 Columns: Inspection Board Panel */}
       <div className={`lg:col-span-2 ${mobileView === 'details' ? 'block' : 'hidden lg:block'}`}>
         {selectedTicket ? (
-          <div className="bg-slate-900 border border-slate-850 rounded-2xl p-6 space-y-6 min-h-[400px] flex flex-col justify-between">
+          <div className="bg-white border border-zinc-200/50 rounded-xl p-6 space-y-6 min-h-[400px] flex flex-col justify-between shadow-sm">
             <div className="space-y-5">
               {/* Mobile Back Button */}
               <button
                 onClick={() => setMobileView('list')}
-                className="lg:hidden flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold mb-2 transition-colors w-fit"
+                className="lg:hidden flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-semibold mb-2 transition-colors w-fit cursor-pointer"
               >
                 ← Back to tickets
               </button>
-              <div className="flex justify-between items-start border-b border-slate-800 pb-4">
+              <div className="flex justify-between items-start border-b border-zinc-100 pb-4">
                 <div>
-                  <h2 className="text-lg font-bold text-white">{selectedTicket.title}</h2>
-                  <span className="text-[10px] font-mono text-slate-500 block mt-0.5">ID: {selectedTicket.id}</span>
+                  <h2 className="text-lg font-bold text-zinc-850">{selectedTicket.title}</h2>
+                  <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">ID: {selectedTicket.id}</span>
                 </div>
                 
                 {/* Cross-Org Alignment Actions Panel */}
                 {activeWorkspace?.role === 'ORG_ADMIN' && (
-                  <form onSubmit={handleShareTicket} className="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-slate-850">
+                  <form onSubmit={handleShareTicket} className="flex items-center gap-2 bg-zinc-50 p-1 rounded-lg border border-zinc-200/50">
                     <input
                       type="text"
                       required
                       placeholder="Partner Org ID"
                       value={targetOrgId}
                       onChange={(e) => setTargetOrgId(e.target.value)}
-                      className="bg-transparent text-[11px] px-2.5 focus:outline-none text-white w-32 font-mono"
+                      className="bg-transparent text-[11px] px-2.5 focus:outline-none text-[#121212] w-32 font-mono"
                     />
-                    <button type="submit" className="px-2.5 py-1 text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors border border-slate-700">
+                    <button type="submit" className="px-2.5 py-1 text-[10px] font-semibold bg-white hover:bg-zinc-50 text-zinc-600 rounded border border-zinc-200 cursor-pointer transition-colors">
                       Share External
                     </button>
                   </form>
@@ -206,24 +206,24 @@ export default function TicketHub() {
               </div>
 
               {/* Description Body */}
-              <div className="text-xs text-slate-300 bg-slate-950 p-4 rounded-xl border border-slate-850 leading-relaxed">
+              <div className="text-xs text-zinc-700 bg-zinc-50/80 p-4 rounded-lg border border-zinc-200/40 leading-relaxed">
                 {selectedTicket.description}
               </div>
 
               {/* Interactive Comments Log Flow */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold text-slate-400">Activity & Feedback Log</h4>
+                <h4 className="text-xs font-bold text-zinc-550">Activity & Feedback Log</h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {comments.length === 0 ? (
-                    <p className="text-[11px] text-slate-500 italic">No notes committed to file yet.</p>
+                    <p className="text-[11px] text-zinc-400 italic">No notes committed to file yet.</p>
                   ) : (
                     comments.map((comment) => (
-                      <div key={comment.id} className="text-xs bg-slate-950 p-3 rounded-xl border border-slate-850/60 space-y-1">
-                        <div className="flex justify-between text-[10px] font-mono text-slate-500">
-                          <span className="text-indigo-400 font-medium">{comment.author?.email || comment.user?.email || 'System Agent'}</span>
+                      <div key={comment.id} className="text-xs bg-zinc-50/60 p-3 rounded-lg border border-zinc-200/30 space-y-1">
+                        <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                          <span className="text-indigo-600 font-semibold">{comment.author?.email || comment.user?.email || 'System Agent'}</span>
                           <span>{new Date(comment.createdAt).toLocaleTimeString()}</span>
                         </div>
-                        <p className="text-slate-300 leading-relaxed">{comment.content || comment.text}</p>
+                        <p className="text-zinc-600 leading-relaxed">{comment.content || comment.text}</p>
                       </div>
                     ))
                   )}
@@ -232,24 +232,24 @@ export default function TicketHub() {
             </div>
 
             {/* Comment Insertion Input Form */}
-            <form onSubmit={handleAddComment} className="border-t border-slate-800 pt-4 flex gap-3">
+            <form onSubmit={handleAddComment} className="border-t border-zinc-100 pt-4 flex gap-3">
               <input
                 type="text"
                 placeholder="Append internal case note summary..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-850 text-xs rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="flex-1 bg-zinc-50 border border-zinc-200/60 text-xs rounded-lg px-4 py-2.5 text-[#121212] placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-200 focus:border-transparent transition-all"
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-50 hover:text-indigo-950 font-bold text-xs rounded-xl text-white transition-all shadow"
+                className="px-4 py-2.5 bg-[#121212] hover:bg-zinc-800 font-semibold text-xs rounded-lg text-white transition-all shadow-sm cursor-pointer"
               >
                 Commit
               </button>
             </form>
           </div>
         ) : (
-          <div className="h-full min-h-[400px] bg-slate-900 border border-slate-850 border-dashed rounded-2xl flex flex-col items-center justify-center text-slate-500 font-mono text-xs p-6">
+          <div className="h-full min-h-[400px] bg-white border border-zinc-200 border-dashed rounded-xl flex flex-col items-center justify-center text-zinc-400 font-mono text-xs p-6 shadow-sm">
             🔮 Select an active tracking file from the stream queue to verify metadata layers.
           </div>
         )}
@@ -257,43 +257,43 @@ export default function TicketHub() {
 
       {/* Ticket Creation Modal Layer Overlay */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl animate-scaleUp">
-            <h3 className="text-base font-bold text-white">Log Operational Core Ticket</h3>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-zinc-200 rounded-xl p-6 w-full max-w-md space-y-4 shadow-2xl animate-scaleUp text-[#121212]">
+            <h3 className="text-base font-bold">Log Operational Core Ticket</h3>
             <form onSubmit={handleCreateTicket} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Case Title</label>
+                <label className="text-[11px] font-semibold text-zinc-500">Case Title</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Memory leak inside worker thread context"
-                  className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-zinc-50 border border-zinc-200/60 rounded-lg px-3 py-2 text-xs text-[#121212] focus:outline-none focus:ring-2 focus:ring-zinc-250"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Diagnostic Details</label>
+                <label className="text-[11px] font-semibold text-zinc-500">Diagnostic Details</label>
                 <textarea
                   required
                   rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Provide system replication snapshots..."
-                  className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full bg-zinc-50 border border-zinc-200/60 rounded-lg px-3 py-2 text-xs text-[#121212] focus:outline-none focus:ring-2 focus:ring-zinc-250 resize-none"
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-3.5 py-2 bg-slate-850 hover:bg-slate-800 text-slate-300 text-xs font-semibold rounded-xl border border-slate-750"
+                  className="px-3.5 py-2 bg-white hover:bg-zinc-50 text-zinc-600 text-xs font-semibold rounded-lg border border-zinc-200 shadow-sm cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow"
+                  className="px-4 py-2 bg-[#121212] hover:bg-zinc-800 text-[#FAF9F6] text-xs font-semibold rounded-lg shadow-sm cursor-pointer"
                 >
                   Dispatch Ticket
                 </button>

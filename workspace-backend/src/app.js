@@ -8,6 +8,8 @@ import ticketRoutes from './routes/tickets.js';
 import pullRequestRoutes from './routes/pullRequests.js';
 import auditRoutes from './routes/audit.js';
 import connectionRoutes from './routes/connections.js';
+import webhookRoutes from './routes/webhook.js';
+import organizationRoutes from './routes/organization.js';
 import { initializeScheduler } from './workers/cronJob.js';
 import { runDigestGenerationCycle } from './workers/cronJob.js';
 
@@ -54,6 +56,10 @@ app.use('/api/v1/audit-logs', auditRoutes);
 
 app.use('/api/v1/connections', connectionRoutes);
 
+app.use('/api/webhooks', webhookRoutes);
+
+app.use('/api/organizations', organizationRoutes);
+
 // 3. SECURED SYSTEM TEST ROUTE
 // Verifies that your single identity layer and tenant guards function seamlessly
 app.get('/api/v1/protected-workspace', verifyToken, tenantGuard, (req, res) => {
@@ -76,10 +82,10 @@ app.use((err, req, res, next) => {
 initializeScheduler();
 
 // TEMP TEST HOOK: Remove this after verifying it runs smoothly!
-if (process.env.NODE_ENV !== 'production') {
-  console.log("🛠️ Dev Mode: Forcing an immediate background digest cycle test...");
-  runDigestGenerationCycle().catch(err => console.error("❌ Immediate test crashed:", err));
-}
+// if (process.env.NODE_ENV !== 'production') {
+//   console.log("🛠️ Dev Mode: Forcing an immediate background digest cycle test...");
+//   runDigestGenerationCycle().catch(err => console.error("❌ Immediate test crashed:", err));
+// }
 
 // 5. BOOT ENGINE
 app.listen(PORT, () => {
