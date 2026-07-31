@@ -19,13 +19,14 @@ router.post('/github', async (req, res) => {
       const action = payload.action; 
       const prData = payload.pull_request;
       
-      // 1. BYPASS THE NAME MATCH FILTER: Paste your copied Org ID string directly here
-      const targetOrganizationId = "605b0b36-0434-44d6-b449-3278dab2c880"; 
+      // 1. BYPASS THE NAME MATCH FILTER: Read dynamically from query params, or fallback to the seed ID
+      const targetOrganizationId = req.query.orgId || req.query.organizationId || "605b0b36-0434-44d6-b449-3278dab2c880"; 
 
-      // 2. Fetch the hardcoded organization to verify it exists in the system
+      // 2. Fetch the organization to verify it exists in the system
       const organization = await prisma.organization.findUnique({
         where: { id: targetOrganizationId }
       });
+
 
       if (organization) {
         // Find an operational user context to prevent foreign key constraint violations
