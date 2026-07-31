@@ -65,13 +65,15 @@ export function WorkspaceProvider({ children }) {
     }
   };
 
+  const BASE_URL = import.meta.env.VITE_API_URL || '';
+
   /**
    * Cleans all active sessions across localStorage contexts[cite: 1]
    */
   const logoutUser = async () => {
     try {
       // Notify backend to clear global Redis cache states[cite: 1]
-      await fetch('/api/v1/auth/logout', {
+      await fetch(`${BASE_URL}/api/v1/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -119,7 +121,8 @@ export function WorkspaceProvider({ children }) {
       'Content-Type': 'application/json',
     };
 
-    return fetch(url, { ...options, headers });
+    const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
+    return fetch(fullUrl, { ...options, headers });
   };
 
   return (

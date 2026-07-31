@@ -23,7 +23,8 @@ export default function AuthView({ initialMode = 'login', onBackToLanding }) {
     setError('');
     setStatus('loading');
 
-    const endpoint = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/register';
+    const BASE_URL = import.meta.env.VITE_API_URL || '';
+    const endpoint = `${BASE_URL}${isLogin ? '/api/v1/auth/login' : '/api/v1/auth/register'}`;
     const payload = isLogin ? { email, password } : { email, password, orgName };
 
     try {

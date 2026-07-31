@@ -100,7 +100,8 @@ export default function ReviewConsole() {
   const handleCsvExport = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/v1/audit-logs/export', {
+      const BASE_URL = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${BASE_URL}/api/v1/audit-logs/export`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
