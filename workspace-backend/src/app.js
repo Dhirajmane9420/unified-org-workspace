@@ -154,6 +154,98 @@ app.post('/api/share', verifyToken, tenantGuard, async (req, res, next) => {
   }
 });
 
+app.post('/api/share/pr', verifyToken, tenantGuard, async (req, res, next) => {
+  const { pullRequestId, targetOrgId } = req.body;
+  const userEmail = req.user.email;
+  const currentOrgId = req.activeOrgId;
+  const currentUserId = req.user.id;
+  const currentRole = req.currentRole;
+
+  if (!pullRequestId || !targetOrgId) {
+    return res.status(400).json({ error: 'Missing pullRequestId or targetOrgId parameters' });
+  }
+
+  // RBAC protection check
+  if (currentRole !== 'ORG_ADMIN' && currentRole !== 'REVIEWER') {
+    return res.status(403).json({ error: 'Access unauthorized: reviewer or admin role required to share pull requests' });
+  }
+
+  try {
+    // 1. Establish the cross-org authorization boundary map (BOLA check)
+    const pr = await prisma.pullRequest.findUnique({
+      where: { id: pullRequestId }
+    });
+
+    if (!pr || pr.organizationId !== currentOrgId) {
+      return res.status(403).json({ error: 'Access unauthorized: pull request does not belong to active organization context' });
+    }
+
+    // 2. Verify approved connection exists between organizations
+    const connection = await prisma.connection.findFirst({
+      where: {
+        OR: [
+          { initiatorOrgId: currentOrgId, targetOrgId: targetOrgId, status: 'APPROVED' },
+          { initiatorOrgId: targetOrgId, targetOrgId: currentOrgId, status: 'APPROVED' }
+        ]
+      }
+    });
+
+    if (!connection) {
+      return res.status(400).json({ error: 'No active approved connection exists with target organization' });
+    }
+
+    // Prevent duplicate SharedItem records
+    let shareMapping = await prisma.sharedItem.findFirst({
+      where: {
+        pullRequestId,
+        sharedWithId: targetOrgId
+      }
+    });
+
+    if (!shareMapping) {
+      shareMapping = await prisma.sharedItem.create({
+        data: {
+          pullRequestId,
+          sharedWithId: targetOrgId
+        }
+      });
+    }
+
+    // 3. Append the transaction to the centralized audit ledger
+    await prisma.auditLog.create({
+      data: {
+        organizationId: currentOrgId,
+        userId: currentUserId,
+        actionType: 'CROSS_ORG_SHARE',
+        metadata: {
+          operator: userEmail,
+          action: 'CROSS_ORG_SHARE',
+          details: `Explicitly authorized cross-org PR share for ID: ${pullRequestId} to Org: ${targetOrgId}`
+        }
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        organizationId: targetOrgId,
+        userId: currentUserId,
+        actionType: 'CROSS_ORG_SHARE',
+        metadata: {
+          operator: userEmail,
+          action: 'CROSS_ORG_SHARE',
+          details: `Explicitly authorized cross-org PR share for ID: ${pullRequestId} to Org: ${targetOrgId}`,
+          inbound: true
+        }
+      }
+    });
+
+    return res.status(200).json({ success: true, data: shareMapping });
+  } catch (error) {
+    return res.status(500).json({ error: 'Database transaction insertion failed', details: error.message });
+  }
+});
+
+
 
 app.use('/api/v1/auth', authRoutes);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
+import SharePRButton from './SharePRButton';
 
 export default function ReviewConsole() {
   const { activeWorkspace, authenticatedFetch } = useWorkspace();
@@ -10,9 +11,6 @@ export default function ReviewConsole() {
   const [activeTab, setActiveTab] = useState('prs'); // 'prs' or 'audit'
   const [mobileView, setMobileView] = useState('list'); // 'list' or 'details'
 
-  // Cross-Org PR Sharing Modal states
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [targetOrgIdInput, setTargetOrgIdInput] = useState('');
 
   // Audit Logs Filter Parameters
   const [searchAction, setSearchAction] = useState('');
@@ -100,34 +98,6 @@ export default function ReviewConsole() {
     }
   };
 
-  const handleSharePrSubmit = async () => {
-    if (!targetOrgIdInput.trim()) {
-      alert('Please provide a valid Partner Organization ID');
-      return;
-    }
-
-    try {
-      const response = await authenticatedFetch('/api/share', {
-        method: 'POST',
-        body: JSON.stringify({ 
-          targetOrgId: targetOrgIdInput.trim(),
-          pullRequestId: selectedPr.id
-        })
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(`Sharing Failed: ${data.error || 'Check that an approved relationship exists with this partner.'}`);
-      } else {
-        alert('PR successfully shared with partner! It will now populate their review pipeline.');
-        setIsShareModalOpen(false);
-        setTargetOrgIdInput('');
-        fetchPullRequests();
-      }
-    } catch (err) {
-      console.error('Failed to execute cross-org share action:', err);
-    }
-  };
 
   // Stream structural tabular CSV raw content out to user download directories
   const handleCsvExport = async () => {
@@ -232,14 +202,12 @@ export default function ReviewConsole() {
                     <p className="text-xs text-slate-400 font-mono mt-1">Active Revision Checkpoint: {diffData.activeVersion}</p>
                   </div>
                   <div className="flex items-center gap-2.5">
-                    {selectedPr.organizationId === activeWorkspace?.organizationId && (
-                      <button
-                        onClick={() => setIsShareModalOpen(true)}
-                        className="px-4.5 py-2.5 text-xs sm:text-sm font-bold bg-white border border-slate-250 hover:bg-slate-50 text-slate-700 hover:border-slate-350 rounded-xl shadow-3xs transition-all cursor-pointer active:scale-95"
-                      >
-                        Share PR
-                      </button>
-                    )}
+                    <SharePRButton 
+                      pullRequestId={selectedPr.id}
+                      ownerOrgId={selectedPr.organizationId}
+                      onShareSuccess={fetchPullRequests}
+                    />
+
                     {selectedPr.status !== 'MERGED' && (
                       <button
                         onClick={() => handleMergeAction(selectedPr.id)}
@@ -465,54 +433,7 @@ export default function ReviewConsole() {
         </div>
       )}
 
-      {/* Share PR Modal Dialog */}
-      {isShareModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg p-7 space-y-5 animate-fadeIn">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-900">Share Pull Request</h3>
-              <button 
-                onClick={() => { setIsShareModalOpen(false); setTargetOrgIdInput(''); }}
-                className="text-slate-450 hover:text-slate-700 text-sm font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div className="space-y-4 text-left">
-              <p className="text-sm text-slate-555 leading-relaxed">
-                Provide the **Organization ID** of your active approved partner. Once shared, this pull request will populate their Review Control pipeline and synchronize with their audit timeline history.
-              </p>
-              
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block font-mono">Partner Organization ID</label>
-                <input 
-                  type="text" 
-                  value={targetOrgIdInput}
-                  onChange={(e) => setTargetOrgIdInput(e.target.value)}
-                  placeholder="e.g. ce8c178d-611d-4c2f-9efb-9fae2adc96d3"
-                  className="w-full bg-slate-50 border border-slate-250 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
-              <button 
-                onClick={() => { setIsShareModalOpen(false); setTargetOrgIdInput(''); }}
-                className="px-5 py-3 rounded-xl text-sm font-bold bg-white border border-slate-200 text-slate-650 hover:bg-slate-55 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSharePrSubmit}
-                className="px-5 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-indigo-950 hover:to-indigo-900 text-white cursor-pointer hover:-translate-y-0.5 active:scale-98 transition-all"
-              >
-                Confirm Share
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes slideOver {
