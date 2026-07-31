@@ -2,7 +2,6 @@
 
 This document lists the limitations of the current design and details future expansion vectors.
 
----
 
 ## 1. Known Limitations
 

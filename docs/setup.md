@@ -1,97 +1,95 @@
-# Setup and Local Run Guide
+### Local Setup & Run Guide 
 
-Follow these steps to set up and run the Unified Organization Workspace application locally.
+### Prerequisites 
+Make sure you have these tools installed: 
+• Node.js (v18.x or later) 
+• PostgreSQL 
+• Redis (Optional. If down, the system defaults to in-memory caching) 
+• Git 
 
----
 
-## 1. Prerequisites
+### Environment Variables 
+Backend Setup 
+Create a file named .env inside the workspace-backend directory: 
+DATABASE_URL="postgresql://postgres.pddweavatdoqirtenutq:dhirajmane%
+402025@aws-1-ap-south
+1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1" 
+PORT=5000 
+NODE_ENV=development 
+REDIS_URL="rediss://default:gQAAAAAAAkvDAAIgcDE3NWZhYzM3Yj
+U2YzI0YzdhOGFmYmQ2OGE3YzIyZGY5Yg@heroic-mink
+150467.upstash.io:6379" 
+JWT_SECRET="unified_org_workshop@123" 
+JWT_EXPIRES_IN="7d" 
+FRONTEND_SUPPORT_URL="http://localhost:3000" 
+FRONTEND_REVIEW_URL="http://localhost:3001" 
+GEMINI_API_KEY="AIzaSyAAYGX12qb8ecVxB0aEJl8u8CFHBwBkkhg" 
+DIGEST_CRON_INTERVAL="0 */5 * * *" 
+Frontend Setup 
+No local .env file is required for development. The Vite configuration file 
+(vite.config.js) handles proxy forwarding automatically from port 5173 to the 
+backend on http://localhost:5000 
 
-Ensure you have the following installed on your developer machine:
-- **Node.js** (v18.x or higher)
-- **PostgreSQL** database instance
-- **Redis** server instance (optional, fallbacks to in-memory store if offline)
-- **Git**
 
----
+### Database & App Initialization 
+Open your terminal, go to the workspace-backend folder, and run the 
+following setup chain: 
+# 1. Install workspace dependencies 
+npm install 
+# 2. Build local Prisma Client artifacts 
+npx prisma generate 
+# 3. Synchronize database schema architecture 
+npx prisma db push 
+# 4. Populate development lookup data and dummy records 
+npm run db:seed 
+Seed User Logins 
+The seed execution establishes these test user accounts: 
+• Pune Instutute Of Computer Technology(Org Admin) : 
+manedhiraj762@gmail.com / dhirajmane@123 
+• Acme Corp (Org Admin): admin@acme.com / admin123 
+• Acme Corp (Support Agent): agent@acme.com / agent123 
+• Stark Industries (Reviewer): reviewer@stark.com / review123 
 
-## 2. Environment Variables Configuration
 
-### Backend Config
-Create a `.env` file in the `workspace-backend` directory with the following variables configured:
-```env
-PORT=5000
-DATABASE_URL="postgresql://<username>:<password>@localhost:5432/<dbname>?schema=public"
-JWT_SECRET="supersecret_jwt_sign_key_phrase"
-JWT_EXPIRES_IN="7d"
-REDIS_URL="redis://localhost:6379"
-GEMINI_API_KEY="your-gemini-ai-api-key"
-```
+### Launching the Apps 
+1. Boot the API Service 
+From the workspace-backend directory: 
+npm run dev 
+The Express application listening engine will bind to port 5000. 
 
-### Frontend Config
-*(Optional)* For local development, **no `.env` file is required** in the `workspace-frontend` directory because the local Vite server is pre-configured with proxy rules in `vite.config.js` to automatically forward `/api` and `/health` requests to the Express backend on `http://localhost:5000`.
+2. Boot the UI Bundler 
+Open a secondary terminal workspace, switch into workspace-frontend, 
+and run: 
+npm install  
+npm run dev 
+The client dashboard layer spins up at http://localhost:5173. Open this 
+URL in your web browser to test the authentication flows.
 
----
 
-## 3. Database Initialization
+### Webhook Integration Testing  
+To receive live GitHub pull request payloads on your local workspace: 
+1. Create a secure public ingress tunnel routing traffic to your local 
+server: 
+npx ngrok http 5000 
 
-Navigate to the `workspace-backend` directory and perform the following database initialization commands:
-```powershell
-# 1. Install dependencies
-npm install
+2. Head to your GitHub Repository settings layout, create a new 
+webhook, and use this configuration: 
+• Payload URL: https://<your-ngrok-subdomain>.ngrok
+free.dev/api/webhooks/github 
+• Content type: application/json 
+• Events: Toggle Let me select individual events and check Pull 
+requests. 
 
-# 2. Generate Prisma Client
-npx prisma generate
+3. Updating an issue status or pulling changes on your repository 
+will automatically trigger visual changes on the dashboard view.
 
-# 3. Force database schema generation and run migrations
-npx prisma db push
 
-# 4. Seed the PostgreSQL instance with test users, organizations, and initial data
-npm run db:seed
-```
 
-Seeding generates the following credentials:
-- **Acme Corp (Org Admin)**: `admin@acme.com` / `admin123`
-- **Acme Corp (Support Agent)**: `agent@acme.com` / `agent123`
-- **Stark Industries (Reviewer)**: `reviewer@stark.com` / `review123`
+### Access Control & Boundary Validation 
 
----
-
-## 4. Run the Dev Environments
-
-### Launch Backend
-In the `workspace-backend` directory, run:
-```powershell
-npm run dev
-```
-The backend server spins up on port **`5000`**.
-
-### Launch Frontend
-In a new terminal window, navigate to the `workspace-frontend` directory and run:
-```powershell
-npm install
-npm run dev
-```
-The frontend Vite server spins up on port **`5173`**. Access the app at `http://localhost:5173`.
-
----
-
-## 5. Simulating GitHub Webhook (Optional)
-
-To mirror pull request status changes via webhook:
-1. Fire up a tunnel forwarding port 5000:
-   ```powershell
-   npx ngrok http 5000
-   ```
-2. Register the generated HTTPS URL in your GitHub repository webhooks panel (`https://<your-subdomain>.ngrok-free.dev/api/webhooks/github`) selecting content-type `application/json` and subscribing to `pull_request` events.
-3. Open or synchronize a pull request on GitHub to see the changes flow into your local dashboard.
-
----
-
-## 6. Running Security Verification Tests
-
-To execute the automated scoping, BOLA isolation, and RBAC tests:
-```powershell
-cd workspace-backend
-node security_verification.js
-```
-The script will run through the security check matrix and verify all isolation boundaries (BOLA, Cross-Org Sharing parameters, RBAC roles, and AI digest context data leaks).
+To review structural code isolation, multi-tenant boundaries (BOLA 
+prevention), and automated role access permissions, run the security script: 
+cd workspace-backend 
+node security_verification.js 
+The terminal log prints granular results for each rule verification check 
+block. 
