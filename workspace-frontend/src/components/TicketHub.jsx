@@ -17,8 +17,8 @@ export default function TicketHub() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch all tickets matching the active workspace tenant
-  const fetchTickets = async () => {
-    setLoading(true);
+  const fetchTickets = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const response = await authenticatedFetch('/api/v1/tickets');
       if (response.ok) {
@@ -32,7 +32,19 @@ export default function TicketHub() {
     } catch (err) {
       console.error('Failed to query ticket assets:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const fetchComments = async (ticketId) => {
+    try {
+      const response = await authenticatedFetch(`/api/v1/tickets/${ticketId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComments(data.comments || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch ticket details:', err);
     }
   };
 
@@ -40,7 +52,23 @@ export default function TicketHub() {
     fetchTickets();
     setSelectedTicket(null);
     setMobileView('list');
+
+    const interval = setInterval(() => {
+      fetchTickets(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [activeWorkspace]);
+
+  useEffect(() => {
+    if (!selectedTicket?.id) return;
+
+    const interval = setInterval(() => {
+      fetchComments(selectedTicket.id);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [selectedTicket?.id]);
 
   // Handle ticket submission
   const handleCreateTicket = async (e) => {
@@ -65,16 +93,9 @@ export default function TicketHub() {
   const handleSelectTicket = async (ticket) => {
     setSelectedTicket(ticket);
     setMobileView('details');
-    try {
-      const response = await authenticatedFetch(`/api/v1/tickets/${ticket.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data.comments || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch ticket details:', err);
-    }
+    fetchComments(ticket.id);
   };
+
 
   // Submit a comment
   const handleAddComment = async (e) => {

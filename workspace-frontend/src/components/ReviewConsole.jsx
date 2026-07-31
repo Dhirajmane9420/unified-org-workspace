@@ -23,7 +23,15 @@ export default function ReviewConsole() {
     setSelectedPr(null);
     setDiffData(null);
     setMobileView('list');
+
+    const interval = setInterval(() => {
+      fetchPullRequests();
+      fetchAuditTimeline();
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [activeWorkspace]);
+
 
   // Query code items tied to workspace tenant matrix
   const fetchPullRequests = async () => {

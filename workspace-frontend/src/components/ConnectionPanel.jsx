@@ -14,9 +14,9 @@ export default function ConnectionPanel() {
 
   const isAdmin = activeWorkspace?.role === 'ORG_ADMIN';
 
-  const fetchConnections = async () => {
+  const fetchConnections = async (silent = false) => {
     if (!isAdmin) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const response = await authenticatedFetch('/api/v1/connections');
       if (response.ok) {
@@ -26,7 +26,7 @@ export default function ConnectionPanel() {
     } catch (err) {
       console.error('Failed to retrieve connection contracts:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -39,7 +39,14 @@ export default function ConnectionPanel() {
 
   useEffect(() => {
     fetchConnections();
+
+    const interval = setInterval(() => {
+      fetchConnections(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [activeWorkspace]);
+
 
   const handleRequestConnection = async (e) => {
     e.preventDefault();
