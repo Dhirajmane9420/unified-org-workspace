@@ -39,10 +39,13 @@ Navigate to the `workspace-backend` directory and perform the following database
 # 1. Install dependencies
 npm install
 
-# 2. Force database schema generation and run migrations
+# 2. Generate Prisma Client
+npx prisma generate
+
+# 3. Force database schema generation and run migrations
 npx prisma db push
 
-# 3. Seed the PostgreSQL instance with test users, organizations, and initial data
+# 4. Seed the PostgreSQL instance with test users, organizations, and initial data
 npm run db:seed
 ```
 
