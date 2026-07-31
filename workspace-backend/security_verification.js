@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient } from './generated/prisma/client.js';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import jwt from 'jsonwebtoken';
@@ -70,6 +70,19 @@ async function runTests() {
       ticketId: sharedTicket.id,
       sharedWithId: orgStark.id
     }
+  });
+
+  // Find a PR belonging to Stark for the PR sharing tests
+  const starkPRs = await prisma.pullRequest.findMany({ where: { organizationId: orgStark.id } });
+  if (starkPRs.length === 0) {
+    console.error('❌ Error: No Stark PRs found to perform sharing checks.');
+    process.exit(1);
+  }
+  const testPR = starkPRs[0];
+
+  // Clean up any old shared PR relations for the test
+  await prisma.sharedItem.deleteMany({
+    where: { pullRequestId: testPR.id }
   });
 
   console.log(`🎫 Test Setup:`);
@@ -169,6 +182,75 @@ async function runTests() {
     reviewerToken,
     orgStark.id,
     200
+  );
+
+  // --- TEST GROUP 2.5: Cross-Org PR Sharing Verification ---
+  console.log('\n--- TEST GROUP 2.5: Cross-Org PR Sharing Verification ---');
+
+  // 1. Verify Acme cannot see the PR initially
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/pull-requests`, {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'x-active-org-id': orgAcme.id
+      }
+    });
+    const prs = await res.json();
+    const isFound = prs.some(p => p.id === testPR.id);
+    if (!isFound) {
+      console.log('✅ PASS: Acme Admin cannot see Stark PR prior to sharing.');
+      testResults.push({ description: 'PR invisible before sharing', passed: true });
+    } else {
+      console.log('❌ FAIL: Acme Admin can see Stark PR before sharing.');
+      testResults.push({ description: 'PR invisible before sharing', passed: false });
+    }
+  } catch (err) {
+    console.log(`❌ FAIL: PR pre-share visibility check errored: ${err.message}`);
+    testResults.push({ description: 'PR invisible before sharing', passed: false });
+  }
+
+  // 2. Share PR to Acme
+  await checkCase(
+    'Stark Reviewer shares PR with Acme Corp',
+    `/api/share`,
+    'POST',
+    reviewerToken,
+    orgStark.id,
+    200,
+    { targetOrgId: orgAcme.id, pullRequestId: testPR.id }
+  );
+
+  // 3. Acme can see the PR after sharing
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/pull-requests`, {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'x-active-org-id': orgAcme.id
+      }
+    });
+    const prs = await res.json();
+    const isFound = prs.some(p => p.id === testPR.id);
+    if (isFound) {
+      console.log('✅ PASS: Acme Admin can see Stark PR after sharing.');
+      testResults.push({ description: 'PR visible after sharing', passed: true });
+    } else {
+      console.log('❌ FAIL: Acme Admin cannot see Stark PR after sharing.');
+      testResults.push({ description: 'PR visible after sharing', passed: false });
+    }
+  } catch (err) {
+    console.log(`❌ FAIL: PR post-share visibility check errored: ${err.message}`);
+    testResults.push({ description: 'PR visible after sharing', passed: false });
+  }
+
+  // 4. Acme Admin can review the shared PR
+  await checkCase(
+    'Acme Admin reviews and approves shared Stark PR',
+    `/api/v1/pull-requests/${testPR.id}/review`,
+    'POST',
+    adminToken,
+    orgAcme.id,
+    200,
+    { approve: true }
   );
 
   // --- TEST GROUP 3: Scoped AI Digests Data Leakage Prevention ---

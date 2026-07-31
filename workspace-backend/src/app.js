@@ -1,6 +1,9 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 import { verifyToken } from './middlewares/auth.js';
 import { tenantGuard } from './middlewares/tenantGuard.js';
 import authRoutes from './routes/auth.js';
@@ -12,6 +15,10 @@ import webhookRoutes from './routes/webhook.js';
 import organizationRoutes from './routes/organization.js';
 import { initializeScheduler } from './workers/cronJob.js';
 import { runDigestGenerationCycle } from './workers/cronJob.js';
+
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,7 +49,73 @@ app.use(cors({
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date() });
 });
+app.post('/api/share', verifyToken, tenantGuard, async (req, res, next) => {
+  const { targetOrgId, ticketId, pullRequestId } = req.body;
+  const userEmail = req.user.email;
+  const currentOrgId = req.activeOrgId;
+  const currentUserId = req.user.id;
 
+  if (!targetOrgId) {
+    return res.status(400).json({ error: 'Missing targetOrgId parameter context' });
+  }
+
+  try {
+    // 1. Verify approved connection exists between organizations
+    const connection = await prisma.connection.findFirst({
+      where: {
+        OR: [
+          { initiatorOrgId: currentOrgId, targetOrgId: targetOrgId, status: 'APPROVED' },
+          { initiatorOrgId: targetOrgId, targetOrgId: currentOrgId, status: 'APPROVED' }
+        ]
+      }
+    });
+
+    if (!connection) {
+      return res.status(400).json({ error: 'No active approved connection exists with target organization' });
+    }
+
+    // 2. Create SharedItem using schema-compliant fields
+    const sharedItem = await prisma.sharedItem.create({
+      data: {
+        sharedWithId: targetOrgId,
+        ticketId: ticketId || null,
+        pullRequestId: pullRequestId || null
+      }
+    });
+
+    // 3. Log a detailed, audit-compliant event to both organizations' timelines
+    await prisma.auditLog.create({
+      data: {
+        organizationId: currentOrgId,
+        userId: currentUserId,
+        actionType: "CROSS_ORG_SHARE",
+        metadata: {
+          operator: userEmail,
+          action: "CROSS_ORG_SHARE",
+          details: `Shared PR ${pullRequestId || ticketId} with organization ${targetOrgId}`
+        }
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        organizationId: targetOrgId,
+        userId: currentUserId,
+        actionType: "CROSS_ORG_SHARE",
+        metadata: {
+          operator: userEmail,
+          action: "CROSS_ORG_SHARE",
+          details: `Shared PR ${pullRequestId || ticketId} with organization ${targetOrgId}`,
+          inbound: true
+        }
+      }
+    });
+
+    return res.status(200).json(sharedItem);
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.use('/api/v1/auth', authRoutes);
 

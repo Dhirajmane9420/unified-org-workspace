@@ -2,7 +2,7 @@ import express from 'express';
 import { verifyToken } from '../middlewares/auth.js';
 import { tenantGuard } from '../middlewares/tenantGuard.js';
 import { authorizeRoles } from '../middlewares/rbacGuard.js';
-import { getPullRequests, createPullRequest, reviewPullRequest, mergePullRequest, getPullRequestDiff } from '../controllers/pullRequests.js';
+import { getPullRequests, createPullRequest, reviewPullRequest, mergePullRequest, getPullRequestDiff, sharePullRequest } from '../controllers/pullRequests.js';
 
 const router = express.Router();
 
@@ -18,5 +18,6 @@ router.post('/:id/review', reviewPullRequest);
 router.post('/:id/merge', mergePullRequest);
 // Add this route right below your existing routes in src/routes/pullRequests.js
 router.get('/:id/diff', getPullRequestDiff);
+router.post('/:id/share', sharePullRequest);
 
 export default router;

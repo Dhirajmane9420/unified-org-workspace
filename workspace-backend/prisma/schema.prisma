@@ -28,7 +28,6 @@ model Organization {
   initiatedConnections Connection[]        @relation("InitiatorOrg")
   targetConnections   Connection[]        @relation("TargetOrg")
   sharedItems         SharedItem[]
-  sharedPRs           SharedPR[]
   auditLogs           AuditLog[]
 }
 
@@ -66,11 +65,13 @@ model Ticket {
 }
 
 model SharedItem {
-  id           String       @id @default(uuid())
-  ticketId     String
-  sharedWithId String
-  ticket       Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  sharedWith   Organization @relation(fields: [sharedWithId], references: [id], onDelete: Cascade)
+  id            String       @id @default(uuid())
+  ticketId      String?
+  pullRequestId String?
+  sharedWithId  String
+  ticket        Ticket?      @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  pullRequest   PullRequest? @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  sharedWith    Organization @relation(fields: [sharedWithId], references: [id], onDelete: Cascade)
 }
 
 model Comment {
@@ -96,7 +97,7 @@ model PullRequest {
   author         User         @relation("Author", fields: [authorId], references: [id], onDelete: Cascade)
   reviewers      PrReviewer[]
   versions       PrVersion[]
-  sharedWith     SharedPR[]
+  sharedWith     SharedItem[]
 }
 
 model PrReviewer {
@@ -142,13 +143,5 @@ model Attachment {
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
 
-model SharedPR {
-  id            String       @id @default(uuid())
-  pullRequestId String
-  sharedWithId  String
-  pullRequest   PullRequest  @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
-  sharedWith    Organization @relation(fields: [sharedWithId], references: [id], onDelete: Cascade)
 
-  @@unique([pullRequestId, sharedWithId])
-}
 

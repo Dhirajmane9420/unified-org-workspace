@@ -10,10 +10,16 @@ export const getPullRequests = async (req, res, next) => {
   const currentOrgId = req.activeOrgId;
   try {
     const pullRequests = await prisma.pullRequest.findMany({
-      where: { organizationId: currentOrgId },
+      where: {
+        OR: [
+          { organizationId: currentOrgId },
+          { sharedWith: { some: { sharedWithId: currentOrgId } } }
+        ]
+      },
       include: {
         author: { select: { email: true } },
-        reviewers: { include: { reviewer: { select: { email: true } } } }
+        reviewers: { include: { reviewer: { select: { email: true } } } },
+        sharedWith: { select: { sharedWithId: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -78,8 +84,16 @@ export const reviewPullRequest = async (req, res, next) => {
   const currentUserId = req.user.id;
 
   try {
-    const pr = await prisma.pullRequest.findUnique({ where: { id } });
-    if (!pr || pr.organizationId !== currentOrgId) {
+    const pr = await prisma.pullRequest.findFirst({
+      where: {
+        id,
+        OR: [
+          { organizationId: currentOrgId },
+          { sharedWith: { some: { sharedWithId: currentOrgId } } }
+        ]
+      }
+    });
+    if (!pr) {
       return res.status(403).json({ error: 'Unauthorized access operation context on target resource' });
     }
 
@@ -105,12 +119,18 @@ export const mergePullRequest = async (req, res, next) => {
   const currentUserId = req.user.id;
 
   try {
-    const pr = await prisma.pullRequest.findUnique({
-      where: { id },
+    const pr = await prisma.pullRequest.findFirst({
+      where: {
+        id,
+        OR: [
+          { organizationId: currentOrgId },
+          { sharedWith: { some: { sharedWithId: currentOrgId } } }
+        ]
+      },
       include: { reviewers: true }
     });
 
-    if (!pr || pr.organizationId !== currentOrgId) {
+    if (!pr) {
       return res.status(403).json({ error: 'Access unauthorized for this pull request resource' });
     }
 
@@ -216,8 +236,16 @@ export const getPullRequestDiff = async (req, res, next) => {
 
   try {
     // 1. Defend authorization boundary using primary BOLA filter
-    const pr = await prisma.pullRequest.findUnique({ where: { id } });
-    if (!pr || pr.organizationId !== currentOrgId) {
+    const pr = await prisma.pullRequest.findFirst({
+      where: {
+        id,
+        OR: [
+          { organizationId: currentOrgId },
+          { sharedWith: { some: { sharedWithId: currentOrgId } } }
+        ]
+      }
+    });
+    if (!pr) {
       return res.status(403).json({ error: 'Access unauthorized for this pull request resource' });
     }
 
@@ -247,6 +275,84 @@ export const getPullRequestDiff = async (req, res, next) => {
         currentDiffText: currentSnapshot.rawDiff,
         previousDiffText: previousSnapshot ? previousSnapshot.rawDiff : ''
       }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const sharePullRequest = async (req, res, next) => {
+  const { id } = req.params;
+  const { targetOrgId, targetOrganizationId } = req.body;
+  const finalTargetOrgId = targetOrgId || targetOrganizationId;
+  const currentOrgId = req.activeOrgId;
+  const currentUserId = req.user.id;
+
+  if (!finalTargetOrgId) {
+    return res.status(400).json({ error: 'Missing target organization ID context parameters' });
+  }
+
+  try {
+    // 1. Check if PR exists and belongs to current organization
+    const pr = await prisma.pullRequest.findUnique({
+      where: { id }
+    });
+
+    if (!pr || pr.organizationId !== currentOrgId) {
+      return res.status(403).json({ error: 'Unauthorized to share this pull request resource' });
+    }
+
+    // 2. Verify approved connection exists between organizations
+    const connection = await prisma.connection.findFirst({
+      where: {
+        OR: [
+          { initiatorOrgId: currentOrgId, targetOrgId: finalTargetOrgId, status: 'APPROVED' },
+          { initiatorOrgId: finalTargetOrgId, targetOrgId: currentOrgId, status: 'APPROVED' }
+        ]
+      }
+    });
+
+    if (!connection) {
+      return res.status(400).json({ error: 'No active approved relationship connection exists with the target organization' });
+    }
+
+    // 3. Create SharedPR entry
+    const sharedPR = await prisma.sharedPR.upsert({
+      where: {
+        pullRequestId_sharedWithId: {
+          pullRequestId: id,
+          sharedWithId: finalTargetOrgId
+        }
+      },
+      update: {},
+      create: {
+        pullRequestId: id,
+        sharedWithId: finalTargetOrgId
+      }
+    });
+
+    // 4. Create Audit Logs for both organizations so it appears in both timelines
+    await prisma.auditLog.create({
+      data: {
+        organizationId: currentOrgId,
+        userId: currentUserId,
+        actionType: 'PR_SHARE',
+        metadata: { pullRequestId: id, sharedWithId: finalTargetOrgId }
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        organizationId: finalTargetOrgId,
+        userId: currentUserId,
+        actionType: 'PR_SHARE',
+        metadata: { pullRequestId: id, sharedWithId: finalTargetOrgId, inbound: true }
+      }
+    });
+
+    res.status(200).json({
+      message: 'Pull request successfully shared cross-organization',
+      sharedPR
     });
   } catch (err) {
     next(err);

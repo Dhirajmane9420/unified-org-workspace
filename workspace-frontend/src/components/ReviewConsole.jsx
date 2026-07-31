@@ -10,6 +10,10 @@ export default function ReviewConsole() {
   const [activeTab, setActiveTab] = useState('prs'); // 'prs' or 'audit'
   const [mobileView, setMobileView] = useState('list'); // 'list' or 'details'
 
+  // Cross-Org PR Sharing Modal states
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [targetOrgIdInput, setTargetOrgIdInput] = useState('');
+
   // Audit Logs Filter Parameters
   const [searchAction, setSearchAction] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,6 +97,35 @@ export default function ReviewConsole() {
       }
     } catch (err) {
       console.error('Network failure executing change gate transaction:', err);
+    }
+  };
+
+  const handleSharePrSubmit = async () => {
+    if (!targetOrgIdInput.trim()) {
+      alert('Please provide a valid Partner Organization ID');
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch('/api/share', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          targetOrgId: targetOrgIdInput.trim(),
+          pullRequestId: selectedPr.id
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Sharing Failed: ${data.error || 'Check that an approved relationship exists with this partner.'}`);
+      } else {
+        alert('PR successfully shared with partner! It will now populate their review pipeline.');
+        setIsShareModalOpen(false);
+        setTargetOrgIdInput('');
+        fetchPullRequests();
+      }
+    } catch (err) {
+      console.error('Failed to execute cross-org share action:', err);
     }
   };
 
@@ -190,14 +223,24 @@ export default function ReviewConsole() {
                     <h3 className="text-sm font-bold text-zinc-800">{selectedPr.title}</h3>
                     <p className="text-[10px] text-zinc-400 font-mono mt-0.5">Active Revision Checkpoint: {diffData.activeVersion}</p>
                   </div>
-                  {selectedPr.status !== 'MERGED' && (
-                    <button
-                      onClick={() => handleMergeAction(selectedPr.id)}
-                      className="px-3.5 py-1.5 text-xs font-semibold bg-[#121212] hover:bg-zinc-800 text-white rounded-lg shadow-sm transition-all cursor-pointer"
-                    >
-                      Authorize Merge Action
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {selectedPr.organizationId === activeWorkspace?.organizationId && (
+                      <button
+                        onClick={() => setIsShareModalOpen(true)}
+                        className="px-3.5 py-1.5 text-xs font-semibold bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 rounded-lg shadow-sm transition-all cursor-pointer"
+                      >
+                        Share PR
+                      </button>
+                    )}
+                    {selectedPr.status !== 'MERGED' && (
+                      <button
+                        onClick={() => handleMergeAction(selectedPr.id)}
+                        className="px-3.5 py-1.5 text-xs font-semibold bg-[#121212] hover:bg-zinc-800 text-white rounded-lg shadow-sm transition-all cursor-pointer"
+                      >
+                        Authorize Merge Action
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {/* PR Metadata Summary & N-Approval Governance Card */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-zinc-50 border border-zinc-200/50 rounded-xl text-left">
@@ -407,6 +450,55 @@ export default function ReviewConsole() {
                   {JSON.stringify(selectedAuditLog.metadata, null, 2)}
                 </pre>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share PR Modal Dialog */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-md p-6 space-y-4 animate-fadeIn">
+            <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+              <h3 className="text-sm font-bold text-zinc-800">Share Pull Request</h3>
+              <button 
+                onClick={() => { setIsShareModalOpen(false); setTargetOrgIdInput(''); }}
+                className="text-zinc-400 hover:text-zinc-700 text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-left">
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Provide the **Organization ID** of your active approved partner. Once shared, this pull request will populate their Review Control pipeline and synchronize with their audit timeline history.
+              </p>
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Partner Organization ID</label>
+                <input 
+                  type="text" 
+                  value={targetOrgIdInput}
+                  onChange={(e) => setTargetOrgIdInput(e.target.value)}
+                  placeholder="e.g. ce8c178d-611d-4c2f-9efb-9fae2adc96d3"
+                  className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium text-zinc-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-100">
+              <button 
+                onClick={() => { setIsShareModalOpen(false); setTargetOrgIdInput(''); }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-zinc-200 text-zinc-650 hover:bg-zinc-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSharePrSubmit}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#121212] hover:bg-zinc-800 text-white transition-colors cursor-pointer"
+              >
+                Confirm Share
+              </button>
             </div>
           </div>
         </div>
