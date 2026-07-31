@@ -135,7 +135,7 @@ export default function AuthView({ initialMode = 'login', onBackToLanding }) {
                   <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#3525cd" strokeWidth="1" />
                 </pattern>
               </defs>
-              <rect fill="url(#grid)" width="100%" height="100%" transform="perspective(500px) rotateX(60deg) translateY(-20%)" />
+              <rect fill="url(#grid)" width="100%" height="100%" style={{ transform: 'perspective(500px) rotateX(60deg) translateY(-20%)' }} />
             </svg>
           </div>
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#3525cd]/5 rounded-full blur-3xl"></div>
