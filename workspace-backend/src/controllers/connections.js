@@ -110,14 +110,24 @@ export const revokeConnection = async (req, res, next) => {
   const currentUserId = req.user.id;
 
   try {
-    const connection = await prisma.connection.findUnique({ where: { id } });
+    // Look up connection dynamically by either Connection ID or Partner Org ID
+    const connection = await prisma.connection.findFirst({
+      where: {
+        OR: [
+          { id },
+          { initiatorOrgId: currentOrgId, targetOrgId: id },
+          { initiatorOrgId: id, targetOrgId: currentOrgId }
+        ]
+      }
+    });
 
     if (!connection || (connection.initiatorOrgId !== currentOrgId && connection.targetOrgId !== currentOrgId)) {
       return res.status(403).json({ error: 'Unauthorized operation on this connection channel' });
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.connection.delete({ where: { id } });
+      // Perform delete on the actual connection record ID
+      await tx.connection.delete({ where: { id: connection.id } });
 
       // Cascade delete shared items between these organizations to enforce clean severance
       const partnerOrgId = connection.initiatorOrgId === currentOrgId ? connection.targetOrgId : connection.initiatorOrgId;
@@ -134,7 +144,7 @@ export const revokeConnection = async (req, res, next) => {
           organizationId: currentOrgId,
           userId: currentUserId,
           actionType: 'CONNECTION_REVOKE',
-          metadata: { severedPartnerOrgId: partnerOrgId, connectionId: id }
+          metadata: { severedPartnerOrgId: partnerOrgId, connectionId: connection.id }
         }
       });
     });

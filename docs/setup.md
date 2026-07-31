@@ -28,10 +28,7 @@ GEMINI_API_KEY="your-gemini-ai-api-key"
 ```
 
 ### Frontend Config
-Create a `.env` file in the `workspace-frontend` directory:
-```env
-VITE_API_URL="http://localhost:5000"
-```
+*(Optional)* For local development, **no `.env` file is required** in the `workspace-frontend` directory because the local Vite server is pre-configured with proxy rules in `vite.config.js` to automatically forward `/api` and `/health` requests to the Express backend on `http://localhost:5000`.
 
 ---
 
@@ -92,6 +89,6 @@ To mirror pull request status changes via webhook:
 To execute the automated scoping, BOLA isolation, and RBAC tests:
 ```powershell
 cd workspace-backend
-npx tsx security_verification.js
+node security_verification.js
 ```
-The script will run through the security check matrix and verify all isolation boundaries.
+The script will run through the security check matrix and verify all isolation boundaries (BOLA, Cross-Org Sharing parameters, RBAC roles, and AI digest context data leaks).
