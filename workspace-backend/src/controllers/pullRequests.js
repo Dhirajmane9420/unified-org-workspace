@@ -239,13 +239,30 @@ export const getPullRequestDiff = async (req, res, next) => {
       return res.status(404).json({ error: 'Requested version snapshot record not found' });
     }
 
+    let previousDiffText = previousSnapshot ? previousSnapshot.rawDiff : '';
+
+    if (!previousSnapshot && versionNum === 1) {
+      // Dynamically resolve base production string from AuditLog metadata
+      const logs = await prisma.auditLog.findMany({
+        where: {
+          organizationId: currentOrgId,
+          actionType: { startsWith: 'PR_' }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+      const matchingLog = logs.find(log => log.metadata && typeof log.metadata === 'object' && log.metadata.prTitle === pr.title);
+      if (matchingLog && matchingLog.metadata && matchingLog.metadata.baseString) {
+        previousDiffText = matchingLog.metadata.baseString;
+      }
+    }
+
     res.status(200).json({
       pullRequestId: id,
       comparingVersion: versionNum,
       baseVersion: previousSnapshot ? versionNum - 1 : 'INITIAL_COMMIT',
       diffView: {
         currentDiffText: currentSnapshot.rawDiff,
-        previousDiffText: previousSnapshot ? previousSnapshot.rawDiff : ''
+        previousDiffText: previousDiffText
       }
     });
   } catch (err) {

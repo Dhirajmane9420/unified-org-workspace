@@ -88,6 +88,7 @@ export default function ReviewConsole() {
       } else {
         alert('Verification success! Code changes successfully merged into trunk.');
         fetchPullRequests();
+        fetchAuditTimeline();
         setSelectedPr(null);
         setDiffData(null);
       }
