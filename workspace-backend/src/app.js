@@ -54,13 +54,37 @@ app.post('/api/share', verifyToken, tenantGuard, async (req, res, next) => {
   const userEmail = req.user.email;
   const currentOrgId = req.activeOrgId;
   const currentUserId = req.user.id;
+  const currentRole = req.currentRole;
 
   if (!targetOrgId) {
     return res.status(400).json({ error: 'Missing targetOrgId parameter context' });
   }
 
   try {
-    // 1. Verify approved connection exists between organizations
+    // 1. Verify resource ownership and execute RBAC checks (BOLA Defense)
+    if (ticketId) {
+      if (currentRole !== 'ORG_ADMIN' && currentRole !== 'SUPPORT_AGENT') {
+        return res.status(403).json({ error: 'Access unauthorized: support agent or admin role required to share tickets' });
+      }
+
+      const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+      if (!ticket || ticket.organizationId !== currentOrgId) {
+        return res.status(403).json({ error: 'Access unauthorized: ticket does not belong to active organization context' });
+      }
+    }
+
+    if (pullRequestId) {
+      if (currentRole !== 'ORG_ADMIN' && currentRole !== 'REVIEWER') {
+        return res.status(403).json({ error: 'Access unauthorized: reviewer or admin role required to share pull requests' });
+      }
+
+      const pr = await prisma.pullRequest.findUnique({ where: { id: pullRequestId } });
+      if (!pr || pr.organizationId !== currentOrgId) {
+        return res.status(403).json({ error: 'Access unauthorized: pull request does not belong to active organization context' });
+      }
+    }
+
+    // 2. Verify approved connection exists between organizations
     const connection = await prisma.connection.findFirst({
       where: {
         OR: [
@@ -74,7 +98,20 @@ app.post('/api/share', verifyToken, tenantGuard, async (req, res, next) => {
       return res.status(400).json({ error: 'No active approved connection exists with target organization' });
     }
 
-    // 2. Create SharedItem using schema-compliant fields
+    // 3. Prevent duplicate SharedItem records
+    const existingSharedItem = await prisma.sharedItem.findFirst({
+      where: {
+        sharedWithId: targetOrgId,
+        ticketId: ticketId || null,
+        pullRequestId: pullRequestId || null
+      }
+    });
+
+    if (existingSharedItem) {
+      return res.status(200).json(existingSharedItem);
+    }
+
+    // 4. Create SharedItem using schema-compliant fields
     const sharedItem = await prisma.sharedItem.create({
       data: {
         sharedWithId: targetOrgId,
@@ -83,7 +120,7 @@ app.post('/api/share', verifyToken, tenantGuard, async (req, res, next) => {
       }
     });
 
-    // 3. Log a detailed, audit-compliant event to both organizations' timelines
+    // 5. Log a detailed, audit-compliant event to both organizations' timelines
     await prisma.auditLog.create({
       data: {
         organizationId: currentOrgId,
@@ -116,6 +153,7 @@ app.post('/api/share', verifyToken, tenantGuard, async (req, res, next) => {
     next(err);
   }
 });
+
 
 app.use('/api/v1/auth', authRoutes);
 

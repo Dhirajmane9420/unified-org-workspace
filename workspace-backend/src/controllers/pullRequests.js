@@ -316,20 +316,22 @@ export const sharePullRequest = async (req, res, next) => {
       return res.status(400).json({ error: 'No active approved relationship connection exists with the target organization' });
     }
 
-    // 3. Create SharedPR entry
-    const sharedPR = await prisma.sharedPR.upsert({
+    // 3. Prevent duplicate SharedItem records
+    let sharedItem = await prisma.sharedItem.findFirst({
       where: {
-        pullRequestId_sharedWithId: {
-          pullRequestId: id,
-          sharedWithId: finalTargetOrgId
-        }
-      },
-      update: {},
-      create: {
         pullRequestId: id,
         sharedWithId: finalTargetOrgId
       }
     });
+
+    if (!sharedItem) {
+      sharedItem = await prisma.sharedItem.create({
+        data: {
+          pullRequestId: id,
+          sharedWithId: finalTargetOrgId
+        }
+      });
+    }
 
     // 4. Create Audit Logs for both organizations so it appears in both timelines
     await prisma.auditLog.create({
@@ -352,8 +354,9 @@ export const sharePullRequest = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Pull request successfully shared cross-organization',
-      sharedPR
+      sharedItem
     });
+
   } catch (err) {
     next(err);
   }

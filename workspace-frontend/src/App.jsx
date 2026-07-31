@@ -49,14 +49,14 @@ export default function App() {
       setCurrentDashboard={setCurrentDashboard}
     >
       {currentDashboard === 'support' ? (
-        <div className="space-y-6 animate-fadeIn">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#121212]">Support Hub</h2>
-            <p className="text-zinc-500 text-xs mt-0.5 font-mono">BOLA-protected multi-tenant operational ticket interface.</p>
+        <div className="space-y-8 animate-fadeIn">
+          <div className="space-y-1">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Support Hub</h2>
+            <p className="text-sm text-slate-500 font-semibold font-sans">BOLA-protected multi-tenant operational ticket interface.</p>
           </div>
           
           {/* Status & Connection Headers Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <WorkspaceStatusPanel />
             </div>
@@ -69,10 +69,10 @@ export default function App() {
           <TicketHub />
         </div>
       ) : currentDashboard === 'review' ? (
-        <div className="space-y-6 animate-fadeIn">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-[#121212]">Review & Audit Console</h2>
-            <p className="text-zinc-500 text-xs mt-0.5 font-mono">N-approval governance matrices and cryptographic audit trails.</p>
+        <div className="space-y-8 animate-fadeIn">
+          <div className="space-y-1">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">Review & Audit Console</h2>
+            <p className="text-sm text-slate-500 font-semibold font-sans">N-approval governance matrices and cryptographic audit trails.</p>
           </div>
           <ReviewConsole />
         </div>
@@ -84,4 +84,4 @@ export default function App() {
       ) : null}
     </DashboardLayout>
   );
-}
+}

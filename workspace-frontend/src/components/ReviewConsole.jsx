@@ -158,21 +158,25 @@ export default function ReviewConsole() {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn">
       {/* Sub-Header Tabs Row */}
-      <div className="flex border-b border-zinc-200 gap-4">
+      <div className="flex border-b border-slate-200 gap-6">
         <button
           onClick={() => setActiveTab('prs')}
-          className={`pb-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
-            activeTab === 'prs' ? 'border-[#121212] text-[#121212]' : 'border-transparent text-zinc-400 hover:text-zinc-700'
+          className={`pb-3.5 text-sm font-bold uppercase tracking-widest transition-all border-b-2 cursor-pointer ${
+            activeTab === 'prs' 
+              ? 'border-indigo-600 text-indigo-750' 
+              : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           Review Control Pipeline
         </button>
         <button
           onClick={() => setActiveTab('audit')}
-          className={`pb-2.5 text-xs font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
-            activeTab === 'audit' ? 'border-[#121212] text-[#121212]' : 'border-transparent text-zinc-400 hover:text-zinc-700'
+          className={`pb-3.5 text-sm font-bold uppercase tracking-widest transition-all border-b-2 cursor-pointer ${
+            activeTab === 'audit' 
+              ? 'border-indigo-600 text-indigo-750' 
+              : 'border-transparent text-slate-400 hover:text-slate-700'
           }`}
         >
           Audit Ledger Analytics
@@ -180,54 +184,58 @@ export default function ReviewConsole() {
       </div>
 
       {activeTab === 'prs' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Code Stream Queue */}
-          <div className={`lg:col-span-1 space-y-3 ${mobileView === 'list' ? 'block' : 'hidden lg:block'}`}>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-550">Pull Request Pipeline</h3>
+          <div className={`lg:col-span-1 space-y-4 ${mobileView === 'list' ? 'block' : 'hidden lg:block'}`}>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Pull Request Pipeline</h3>
             {pullRequests.length === 0 ? (
-              <div className="p-4 bg-white rounded-xl border border-zinc-200/50 text-xs text-zinc-450 text-center">
+              <div className="p-6 bg-white rounded-2xl border border-slate-200 text-sm text-slate-400 text-center font-medium">
                 No open engineering files listed.
               </div>
             ) : (
-              pullRequests.map((pr) => (
-                <div
-                  key={pr.id}
-                  onClick={() => inspectPrDiff(pr)}
-                  className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    selectedPr?.id === pr.id ? 'bg-indigo-50/40 border-indigo-200 shadow-sm' : 'bg-white border-zinc-200/50 hover:border-zinc-300'
-                  }`}
-                >
-                  <h4 className="text-xs font-bold text-zinc-800 truncate">{pr.title}</h4>
-                  <div className="flex justify-between items-center text-[10px] text-zinc-500 mt-2 font-mono">
-                    <span>Approvals: <strong className="text-indigo-600">{pr.reviewers?.filter(r => r.hasApproved).length || 0}</strong></span>
-                    <span className="bg-zinc-100 border border-zinc-200/50 px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wide font-semibold text-zinc-500">{pr.status}</span>
+              <div className="space-y-3 max-h-[calc(100vh-240px)] overflow-y-auto pr-1">
+                {pullRequests.map((pr) => (
+                  <div
+                    key={pr.id}
+                    onClick={() => inspectPrDiff(pr)}
+                    className={`p-5 rounded-2xl border text-left cursor-pointer transition-all duration-200 ${
+                      selectedPr?.id === pr.id 
+                        ? 'bg-indigo-50/50 border-indigo-300 shadow-[0_4px_12px_-3px_rgba(79,70,229,0.08)] scale-[1.01] ring-1 ring-indigo-200/50' 
+                        : 'bg-white border-slate-200 hover:border-slate-350 hover:shadow-xs hover:-translate-y-0.5'
+                    }`}
+                  >
+                    <h4 className="text-sm sm:text-base font-bold text-slate-800 truncate">{pr.title}</h4>
+                    <div className="flex justify-between items-center text-xs text-slate-500 mt-3 font-mono">
+                      <span>Approvals: <strong className="text-indigo-650">{pr.reviewers?.filter(r => r.hasApproved).length || 0}</strong></span>
+                      <span className="bg-slate-105 border border-slate-250 px-2.5 py-0.5 rounded-md text-[10px] uppercase tracking-widest font-bold text-slate-550">{pr.status}</span>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
 
           {/* Right Columns: Side-by-Side Snapshot Diff Component Context Block */}
           <div className={`lg:col-span-2 ${mobileView === 'details' ? 'block' : 'hidden lg:block'}`}>
             {selectedPr && diffData ? (
-              <div className="bg-white border border-zinc-200/50 rounded-xl p-5 space-y-4 shadow-sm">
+              <div className="bg-white border border-slate-200 rounded-2xl p-7 space-y-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_25px_-2px_rgba(0,0,0,0.05)] transition-all duration-300">
                 {/* Mobile Back Button */}
                 <button
                   onClick={() => setMobileView('list')}
-                  className="lg:hidden flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-semibold mb-2 transition-colors w-fit cursor-pointer"
+                  className="lg:hidden flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-bold mb-3 transition-colors w-fit cursor-pointer"
                 >
                   ← Back to PRs
                 </button>
-                <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+                <div className="flex flex-wrap justify-between items-center border-b border-slate-100 pb-4 gap-4">
                   <div>
-                    <h3 className="text-sm font-bold text-zinc-800">{selectedPr.title}</h3>
-                    <p className="text-[10px] text-zinc-400 font-mono mt-0.5">Active Revision Checkpoint: {diffData.activeVersion}</p>
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{selectedPr.title}</h3>
+                    <p className="text-xs text-slate-400 font-mono mt-1">Active Revision Checkpoint: {diffData.activeVersion}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     {selectedPr.organizationId === activeWorkspace?.organizationId && (
                       <button
                         onClick={() => setIsShareModalOpen(true)}
-                        className="px-3.5 py-1.5 text-xs font-semibold bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-700 rounded-lg shadow-sm transition-all cursor-pointer"
+                        className="px-4.5 py-2.5 text-xs sm:text-sm font-bold bg-white border border-slate-250 hover:bg-slate-50 text-slate-700 hover:border-slate-350 rounded-xl shadow-3xs transition-all cursor-pointer active:scale-95"
                       >
                         Share PR
                       </button>
@@ -235,7 +243,7 @@ export default function ReviewConsole() {
                     {selectedPr.status !== 'MERGED' && (
                       <button
                         onClick={() => handleMergeAction(selectedPr.id)}
-                        className="px-3.5 py-1.5 text-xs font-semibold bg-[#121212] hover:bg-zinc-800 text-white rounded-lg shadow-sm transition-all cursor-pointer"
+                        className="px-4.5 py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-indigo-950 hover:to-indigo-900 text-white rounded-xl shadow-sm transition-all hover:-translate-y-0.5 active:scale-98 cursor-pointer"
                       >
                         Authorize Merge Action
                       </button>
@@ -243,42 +251,42 @@ export default function ReviewConsole() {
                   </div>
                 </div>
                 {/* PR Metadata Summary & N-Approval Governance Card */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-zinc-50 border border-zinc-200/50 rounded-xl text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-slate-50 border border-slate-200 rounded-2xl text-left">
                   {/* Left Side: Metadata summary */}
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-3.5 text-sm">
                     <div>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Author Profile</span>
-                      <p className="font-semibold text-zinc-700">{selectedPr.author?.email || 'External Contributor (GitHub Webhook)'}</p>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Author Profile</span>
+                      <p className="font-bold text-slate-700 text-sm mt-0.5">{selectedPr.author?.email || 'External Contributor (GitHub Webhook)'}</p>
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Target & Origin Mappings</span>
-                      <p className="font-mono text-[11px] text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-1 rounded w-fit mt-1">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Target & Origin Mappings</span>
+                      <p className="font-mono text-xs text-indigo-750 bg-indigo-50/50 border border-indigo-100 px-2.5 py-1 rounded-md w-fit mt-1.5 font-semibold">
                         {diffData.stagedSource?.startsWith('Branch:') 
                           ? diffData.stagedSource.split('\n')[0].replace('Branch: ', '')
                           : 'test/webhook-pipeline → main'}
                       </p>
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Description</span>
-                      <p className="text-zinc-650 leading-relaxed text-[11px] mt-0.5">{selectedPr.description || 'No description provided.'}</p>
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block font-mono">Description</span>
+                      <p className="text-slate-650 leading-relaxed text-xs mt-1 font-medium">{selectedPr.description || 'No description provided.'}</p>
                     </div>
                   </div>
 
                   {/* Right Side: N-Approval Governance Gate */}
-                  <div className="p-3 bg-white border border-zinc-200/80 rounded-xl space-y-3 shadow-inner">
+                  <div className="p-4.5 bg-white border border-slate-250 rounded-2xl space-y-4 shadow-3xs text-left">
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-mono">N-Approval Gate</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold font-mono ${
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest font-mono">N-Approval Gate</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono ${
                         (selectedPr.reviewers?.length > 0 && selectedPr.reviewers.every(r => r.hasApproved)) || selectedPr.status === 'MERGED' || (selectedPr.reviewers?.length === 0)
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : 'bg-amber-50 text-amber-600 border border-amber-100'
+                          ? 'bg-emerald-50 text-emerald-650 border border-emerald-250'
+                          : 'bg-amber-50 text-amber-650 border border-amber-250'
                       }`}>
                         {selectedPr.status === 'MERGED' || (selectedPr.reviewers?.length === 0) ? 'CLEARED' : 'PENDING APPROVAL'}
                       </span>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px] font-semibold text-zinc-700">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-bold text-slate-700">
                         <span>Governance Threshold Clearance:</span>
                         <span>
                           {selectedPr.reviewers?.filter(r => r.hasApproved).length || 0} / {selectedPr.reviewers?.length || 1}
@@ -286,11 +294,11 @@ export default function ReviewConsole() {
                       </div>
                       
                       {/* Threshold Meter Progress Bar */}
-                      <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden border border-zinc-200/40">
+                      <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200/60 shadow-2xs">
                         <div 
                           className={`h-full transition-all duration-500 ${
                             (selectedPr.reviewers?.length > 0 && selectedPr.reviewers.every(r => r.hasApproved)) || selectedPr.status === 'MERGED' || (selectedPr.reviewers?.length === 0)
-                              ? 'bg-emerald-500'
+                              ? 'bg-emerald-550'
                               : 'bg-amber-500'
                           }`}
                           style={{
@@ -303,45 +311,47 @@ export default function ReviewConsole() {
                     </div>
 
                     {/* Reviewers sign-offs details */}
-                    <div className="space-y-1 text-[10px]">
-                      <span className="text-zinc-400 font-bold block font-mono">Reviewer Sign-offs Map:</span>
-                      {selectedPr.reviewers && selectedPr.reviewers.length > 0 ? (
-                        selectedPr.reviewers.map(r => (
-                          <div key={r.id} className="flex justify-between items-center py-0.5 border-b border-zinc-100/50 last:border-0">
-                            <span className="text-zinc-600 font-medium font-mono">{r.reviewer?.email}</span>
-                            <span className={`font-bold ${r.hasApproved ? 'text-emerald-500' : 'text-zinc-400'}`}>
-                              {r.hasApproved ? 'Approved ✓' : 'Pending ⏳'}
-                            </span>
+                    <div className="space-y-2 text-xs">
+                      <span className="text-slate-400 font-bold block font-mono text-[11px] uppercase tracking-wider">Reviewer Sign-offs Map:</span>
+                      <div className="space-y-1.5 max-h-24 overflow-y-auto pr-1">
+                        {selectedPr.reviewers && selectedPr.reviewers.length > 0 ? (
+                          selectedPr.reviewers.map(r => (
+                            <div key={r.id} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-0">
+                              <span className="text-slate-700 font-bold text-xs font-mono">{r.reviewer?.email}</span>
+                              <span className={`font-bold text-xs ${r.hasApproved ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {r.hasApproved ? 'Approved ✓' : 'Pending ⏳'}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex justify-between items-center text-slate-550 font-mono py-1">
+                            <span>SYSTEM_DAEMON (Webhook Triggered)</span>
+                            <span className="text-emerald-650 font-bold">Approved ✓</span>
                           </div>
-                        ))
-                      ) : (
-                        <div className="flex justify-between items-center text-zinc-550 font-mono">
-                          <span>SYSTEM_DAEMON (Webhook Triggered)</span>
-                          <span className="text-emerald-500 font-bold">Approved ✓</span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Side-by-Side Core Text File Layout Map */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                   <div>
-                    <span className="text-[10px] font-semibold text-zinc-500 block mb-1 uppercase tracking-wide">Base Production String</span>
-                    <pre className="p-3 bg-zinc-50 text-zinc-700 rounded-lg border border-zinc-200/50 font-mono text-[11px] overflow-x-auto min-h-24 whitespace-pre-wrap">
+                    <span className="text-xs font-bold text-slate-550 block mb-1.5 uppercase tracking-wider">Base Production String</span>
+                    <pre className="p-4 bg-slate-50 text-slate-700 rounded-xl border border-slate-200 font-mono text-xs leading-relaxed overflow-x-auto min-h-28 whitespace-pre-wrap">
                       {diffData.baseSource || "// Initial workspace asset base state layer empty."}
                     </pre>
                   </div>
                   <div>
-                    <span className="text-[10px] font-semibold text-indigo-650 block mb-1 uppercase tracking-wide">Staged Revision State</span>
-                    <pre className="p-3 bg-indigo-50/20 text-indigo-900 rounded-lg border border-indigo-100 font-mono text-[11px] overflow-x-auto min-h-24 whitespace-pre-wrap">
+                    <span className="text-xs font-bold text-indigo-700 block mb-1.5 uppercase tracking-wider">Staged Revision State</span>
+                    <pre className="p-4 bg-indigo-50/15 text-indigo-950 rounded-xl border border-indigo-100/70 font-mono text-xs leading-relaxed overflow-x-auto min-h-28 whitespace-pre-wrap">
                       {diffData.stagedSource}
                     </pre>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="h-full min-h-[300px] bg-white border border-zinc-200 border-dashed rounded-xl flex flex-col items-center justify-center text-zinc-400 font-mono text-xs p-6 shadow-sm">
+              <div className="h-full min-h-[300px] bg-white border border-slate-200 border-dashed rounded-2xl flex flex-col items-center justify-center text-slate-400 font-mono text-sm p-8 shadow-xs">
                 🔮 Select an engineering file to calculate diff snapshots and check N-Approval gates.
               </div>
             )}
@@ -349,19 +359,19 @@ export default function ReviewConsole() {
         </div>
       ) : (
         /* Tab 2 Panel: Audit Timeline Streams + CSV Download Exporters */
-        <div className="bg-white border border-zinc-200/50 rounded-xl p-5 space-y-4 shadow-sm text-[#121212]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4">
-            <div className="flex items-center gap-2 bg-zinc-50 p-1 rounded-lg border border-zinc-200/50 w-full sm:w-auto">
+        <div className="bg-white border border-slate-200 rounded-2xl p-7 space-y-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_25px_-2px_rgba(0,0,0,0.05)] transition-all duration-300 text-[#121212]">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div className="flex items-center gap-2.5 bg-slate-55 p-1.5 rounded-xl border border-slate-200 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Filter action (e.g. TICKET_CREATE)..."
                 value={searchAction}
                 onChange={(e) => setSearchAction(e.target.value)}
-                className="bg-transparent text-xs px-3 py-1.5 text-[#121212] placeholder-zinc-400 focus:outline-none w-full sm:w-64 font-mono"
+                className="bg-transparent text-sm px-3 py-2 text-slate-800 placeholder-slate-400 focus:outline-none w-full sm:w-64 font-mono"
               />
               <button 
                 onClick={fetchAuditTimeline}
-                className="px-3.5 py-1.5 text-xs bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-600 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-bold bg-white hover:bg-slate-50 border border-slate-350 text-slate-700 rounded-lg shadow-3xs cursor-pointer"
               >
                 Query
               </button>
@@ -369,36 +379,36 @@ export default function ReviewConsole() {
 
             <button
               onClick={handleCsvExport}
-              className="px-4 py-2 text-xs font-semibold bg-[#121212] hover:bg-zinc-800 text-white rounded-lg transition-all shadow-sm flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer"
+              className="px-5 py-3 text-sm font-bold bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-indigo-950 hover:to-indigo-900 text-white rounded-xl transition-all shadow-sm flex items-center gap-2 w-full sm:w-auto justify-center cursor-pointer hover:-translate-y-0.5"
             >
               📥 Export Tabular CSV Ledger
             </button>
           </div>
 
           {loading ? (
-            <div className="text-xs font-mono text-zinc-400 py-6 text-center">Reassembling decentralized activity records...</div>
+            <div className="text-sm font-mono text-slate-400 py-8 text-center">Reassembling decentralized activity records...</div>
           ) : auditLogs.length === 0 ? (
-            <div className="text-xs text-zinc-400 py-8 text-center font-mono">No matching system change mutations tracked inside this index parameters.</div>
+            <div className="text-sm text-slate-400 py-10 text-center font-mono">No matching system change mutations tracked inside this index parameters.</div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-zinc-200/60">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+              <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-600 font-semibold tracking-wide">
-                    <th className="p-3">Timestamp</th>
-                    <th className="p-3">Operator / User</th>
-                    <th className="p-3 font-mono">Mutation Event ID</th>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold tracking-wide">
+                    <th className="p-4 text-xs uppercase">Timestamp</th>
+                    <th className="p-4 text-xs uppercase">Operator / User</th>
+                    <th className="p-4 text-xs uppercase font-mono">Mutation Event ID</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200/40 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {auditLogs.map((log) => (
                     <tr 
                       key={log.id} 
                       onClick={() => setSelectedAuditLog(log)}
-                      className="hover:bg-zinc-50/60 text-zinc-700 transition-colors cursor-pointer"
+                      className="hover:bg-slate-50 text-slate-800 font-medium transition-colors cursor-pointer"
                     >
-                      <td className="p-3 font-mono text-[11px] text-zinc-400 whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
-                      <td className="p-3 font-semibold text-zinc-850">{log.user?.email || 'SYSTEM_DAEMON'}</td>
-                      <td className="p-3"><span className="px-2 py-0.5 rounded font-mono text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 font-semibold">{log.actionType}</span></td>
+                      <td className="p-4 font-mono text-xs text-slate-450 whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
+                      <td className="p-4 font-bold text-slate-800">{log.user?.email || 'SYSTEM_DAEMON'}</td>
+                      <td className="p-4"><span className="px-2.5 py-1 rounded-md font-mono text-xs bg-indigo-50 text-indigo-750 border border-indigo-150/60 font-bold">{log.actionType}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -411,42 +421,42 @@ export default function ReviewConsole() {
       {/* Slide-out Drawer for Audit Log Cryptographic Metadata */}
       {selectedAuditLog && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-zinc-900/30 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedAuditLog(null)}></div>
-          <div className="relative w-full max-w-lg bg-white h-full shadow-2xl p-6 flex flex-col animate-slideOver text-[#121212] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-zinc-100 pb-4 mb-6">
+          <div className="absolute inset-0 bg-slate-900/35 backdrop-blur-sm animate-fadeIn" onClick={() => setSelectedAuditLog(null)}></div>
+          <div className="relative w-full max-w-xl bg-white h-full shadow-2xl p-8 flex flex-col border-l border-slate-250 animate-slideOver text-[#121212] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
               <div>
-                <h3 className="font-bold text-sm text-zinc-800 uppercase tracking-wide">Ledger Event Details</h3>
-                <p className="text-[10px] text-zinc-400 font-mono mt-0.5">{selectedAuditLog.id}</p>
+                <h3 className="font-extrabold text-base text-slate-800 uppercase tracking-widest">Ledger Event Details</h3>
+                <p className="text-xs text-slate-400 font-mono mt-1">{selectedAuditLog.id}</p>
               </div>
               <button 
                 onClick={() => setSelectedAuditLog(null)}
-                className="text-zinc-450 hover:text-zinc-800 text-xs font-bold font-sans cursor-pointer"
+                className="text-slate-450 hover:text-slate-800 text-sm font-extrabold cursor-pointer"
               >
                 ✕ Close
               </button>
             </div>
 
-            <div className="space-y-5 flex-1 text-left">
+            <div className="space-y-6 flex-1 text-left">
               <div>
-                <span className="text-[10px] font-bold text-zinc-450 uppercase tracking-wider block mb-1">Action Type</span>
-                <span className="px-2.5 py-1 rounded font-mono text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Action Type</span>
+                <span className="px-2.5 py-1.5 rounded-lg font-mono text-xs bg-indigo-50 text-indigo-700 border border-indigo-150/50 font-bold">
                   {selectedAuditLog.actionType}
                 </span>
               </div>
 
               <div>
-                <span className="text-[10px] font-bold text-zinc-450 uppercase tracking-wider block mb-1">Timestamp</span>
-                <p className="text-xs font-medium text-zinc-700">{new Date(selectedAuditLog.createdAt).toLocaleString()}</p>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Timestamp</span>
+                <p className="text-sm font-bold text-slate-700">{new Date(selectedAuditLog.createdAt).toLocaleString()}</p>
               </div>
 
               <div>
-                <span className="text-[10px] font-bold text-zinc-450 uppercase tracking-wider block mb-1">Operator Identity</span>
-                <p className="text-xs font-semibold text-zinc-850">{selectedAuditLog.user?.email || 'SYSTEM_DAEMON'}</p>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Operator Identity</span>
+                <p className="text-sm font-bold text-slate-800">{selectedAuditLog.user?.email || 'SYSTEM_DAEMON'}</p>
               </div>
 
-              <div className="border-t border-zinc-100 pt-4">
-                <span className="text-[10px] font-bold text-zinc-450 uppercase tracking-wider block mb-2 font-mono">Raw Cryptographic Metadata</span>
-                <pre className="p-4 bg-zinc-50 border border-zinc-200/60 rounded-xl text-[10px] font-mono text-zinc-650 overflow-x-auto whitespace-pre-wrap max-h-[350px]">
+              <div className="border-t border-slate-100 pt-5">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2.5 font-mono">Raw Cryptographic Metadata</span>
+                <pre className="p-5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-slate-650 leading-relaxed shadow-inner overflow-x-auto max-h-[350px]">
                   {JSON.stringify(selectedAuditLog.metadata, null, 2)}
                 </pre>
               </div>
@@ -457,45 +467,45 @@ export default function ReviewConsole() {
 
       {/* Share PR Modal Dialog */}
       {isShareModalOpen && (
-        <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-2xl w-full max-w-md p-6 space-y-4 animate-fadeIn">
-            <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
-              <h3 className="text-sm font-bold text-zinc-800">Share Pull Request</h3>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg p-7 space-y-5 animate-fadeIn">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-lg font-bold text-slate-900">Share Pull Request</h3>
               <button 
                 onClick={() => { setIsShareModalOpen(false); setTargetOrgIdInput(''); }}
-                className="text-zinc-400 hover:text-zinc-700 text-xs font-bold"
+                className="text-slate-450 hover:text-slate-700 text-sm font-bold cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-4 text-left">
-              <p className="text-xs text-zinc-500 leading-relaxed">
+              <p className="text-sm text-slate-555 leading-relaxed">
                 Provide the **Organization ID** of your active approved partner. Once shared, this pull request will populate their Review Control pipeline and synchronize with their audit timeline history.
               </p>
               
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Partner Organization ID</label>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block font-mono">Partner Organization ID</label>
                 <input 
                   type="text" 
                   value={targetOrgIdInput}
                   onChange={(e) => setTargetOrgIdInput(e.target.value)}
                   placeholder="e.g. ce8c178d-611d-4c2f-9efb-9fae2adc96d3"
-                  className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium text-zinc-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
+                  className="w-full bg-slate-50 border border-slate-250 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-zinc-100">
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
               <button 
                 onClick={() => { setIsShareModalOpen(false); setTargetOrgIdInput(''); }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-zinc-200 text-zinc-650 hover:bg-zinc-50 transition-colors cursor-pointer"
+                className="px-5 py-3 rounded-xl text-sm font-bold bg-white border border-slate-200 text-slate-650 hover:bg-slate-55 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSharePrSubmit}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#121212] hover:bg-zinc-800 text-white transition-colors cursor-pointer"
+                className="px-5 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-indigo-950 hover:to-indigo-900 text-white cursor-pointer hover:-translate-y-0.5 active:scale-98 transition-all"
               >
                 Confirm Share
               </button>
