@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ChevronDown, Plus, CheckCircle2 } from 'lucide-react';
 
@@ -16,6 +16,9 @@ export default function DashboardLayout({ children, currentDashboard, setCurrent
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const notificationsRef = useRef(null);
+  const workspaceSwitcherRef = useRef(null);
 
   // Poll for background AI digests cached by the cron job to feed the notification bell
   useEffect(() => {
@@ -37,7 +40,24 @@ export default function DashboardLayout({ children, currentDashboard, setCurrent
     return () => clearInterval(interval);
   }, [activeWorkspace]);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (workspaceSwitcherRef.current && !workspaceSwitcherRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -91,7 +111,7 @@ export default function DashboardLayout({ children, currentDashboard, setCurrent
         <div className="flex items-center gap-3 sm:gap-5">
           
           {/* AI Progress Tracker Bell Panel Notification System */}
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
             <button 
               onClick={() => { setShowNotifications(!showNotifications); setUnreadCount(0); }}
               className="p-3 rounded-xl bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-55/10 text-slate-600 hover:text-slate-900 relative transition-all shadow-xs hover:shadow-sm cursor-pointer"
@@ -131,7 +151,7 @@ export default function DashboardLayout({ children, currentDashboard, setCurrent
           {/* Desktop Controls - Hidden on Mobile */}
           <div className="hidden md:flex items-center gap-4">
             {/* Core Multi-Tenant Workspace Switcher Dropdown */}
-            <div className="relative">
+          <div className="relative" ref={workspaceSwitcherRef}>
               <button 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-3.5 px-4.5 py-2.5 bg-white border border-slate-200 rounded-xl shadow-xs hover:border-slate-350 hover:shadow-sm transition-all text-xs font-semibold cursor-pointer"
