@@ -9,8 +9,7 @@ const prisma = new PrismaClient({ adapter });
 
 const router = express.Router();
 
-// POST /api/webhooks/github
-router.post('/github', async (req, res) => {
+const handleGithubWebhook = async (req, res) => {
   try {
     const githubEvent = req.headers['x-github-event'];
     const payload = req.body;
@@ -19,13 +18,34 @@ router.post('/github', async (req, res) => {
       const action = payload.action; 
       const prData = payload.pull_request;
       
-      // 1. BYPASS THE NAME MATCH FILTER: Paste your copied Org ID string directly here
-      const targetOrganizationId = "605b0b36-0434-44d6-b449-3278dab2c880"; 
+      // Resolve organization context dynamically
+      const targetOrgId = req.params.orgId;
+      let organization;
 
-      // 2. Fetch the hardcoded organization to verify it exists in the system
-      const organization = await prisma.organization.findUnique({
-        where: { id: targetOrganizationId }
-      });
+      if (targetOrgId) {
+        organization = await prisma.organization.findUnique({
+          where: { id: targetOrgId }
+        });
+      }
+
+      // Fallback name matching against repository owner or name
+      if (!organization && payload.repository) {
+        const repoOwner = payload.repository.owner?.login;
+        const repoName = payload.repository.name;
+        organization = await prisma.organization.findFirst({
+          where: {
+            OR: [
+              { name: { equals: repoOwner, mode: 'insensitive' } },
+              { name: { equals: repoName, mode: 'insensitive' } }
+            ]
+          }
+        });
+      }
+
+      // Default fallback to first organization if no matches found
+      if (!organization) {
+        organization = await prisma.organization.findFirst();
+      }
 
       if (organization) {
         // Find an operational user context to prevent foreign key constraint violations
@@ -62,7 +82,8 @@ router.post('/github', async (req, res) => {
                 prUrl: prData.html_url,
                 user: prData.user.login,
                 branch: `${prData.head.ref} → ${prData.base.ref}`,
-                state: prData.state 
+                state: prData.state,
+                baseString: "# Unified Org Workspace\n// Baseline production architecture asset."
               },
               organizationId: organization.id,
               userId: user.id
@@ -70,9 +91,17 @@ router.post('/github', async (req, res) => {
           });
           console.log(`Successfully logged PR action: PR_${action.toUpperCase()}`);
 
-          // 4. Synchronize the actual PullRequest and PrVersion records in the database
-          if (action === 'opened') {
-            await prisma.$transaction(async (tx) => {
+          // Check if the PullRequest record already exists in the database
+          let existingPR = await prisma.pullRequest.findFirst({
+            where: {
+              organizationId: organization.id,
+              title: prData.title
+            }
+          });
+
+          // If the PR does not exist in the database, automatically initialize it
+          if (!existingPR) {
+            existingPR = await prisma.$transaction(async (tx) => {
               const pr = await tx.pullRequest.create({
                 data: {
                   organizationId: organization.id,
@@ -93,17 +122,12 @@ router.post('/github', async (req, res) => {
                   rawDiff: `Branch: ${prData.head.ref} -> ${prData.base.ref}\nGitHub URL: ${prData.html_url}`
                 }
               });
+              return pr;
             });
-            console.log(`Successfully synced PR creation: ${prData.title}`);
-          } else if (action === 'synchronize') {
-            const existingPR = await prisma.pullRequest.findFirst({
-              where: {
-                organizationId: organization.id,
-                title: prData.title
-              }
-            });
-
-            if (existingPR) {
+            console.log(`Successfully auto-initialized PR record: ${prData.title}`);
+          } else {
+            // Synchronize subsequent events if the PR already exists
+            if (action === 'synchronize') {
               const nextVersion = existingPR.currentVersion + 1;
               await prisma.$transaction(async (tx) => {
                 await tx.pullRequest.update({
@@ -122,16 +146,7 @@ router.post('/github', async (req, res) => {
                 });
               });
               console.log(`Successfully synchronized PR version to #${nextVersion}: ${prData.title}`);
-            }
-          } else if (action === 'closed') {
-            const existingPR = await prisma.pullRequest.findFirst({
-              where: {
-                organizationId: organization.id,
-                title: prData.title
-              }
-            });
-
-            if (existingPR) {
+            } else if (action === 'closed') {
               const isMerged = prData.merged || false;
               const newStatus = isMerged ? 'MERGED' : 'CLOSED';
               await prisma.pullRequest.update({
@@ -139,13 +154,19 @@ router.post('/github', async (req, res) => {
                 data: { status: newStatus }
               });
               console.log(`Successfully updated PR status to ${newStatus}: ${prData.title}`);
+            } else if (action === 'reopened') {
+              await prisma.pullRequest.update({
+                where: { id: existingPR.id },
+                data: { status: 'IN_REVIEW' }
+              });
+              console.log(`Successfully reopened PR: ${prData.title}`);
             }
           }
         } else {
           console.error("Pipeline failure: No operational user found in DB to link the audit row.");
         }
       } else {
-        console.error(`Pipeline failure: Organization ID ${targetOrganizationId} not found in database.`);
+        console.error('Pipeline failure: Organization context not found in database.');
       }
     }
 
@@ -154,6 +175,9 @@ router.post('/github', async (req, res) => {
     console.error('Webhook processing failure:', error);
     res.status(500).send('Internal Server Error');
   }
-});
+};
+
+router.post('/github', handleGithubWebhook);
+router.post('/github/:orgId', handleGithubWebhook);
 
 export default router;

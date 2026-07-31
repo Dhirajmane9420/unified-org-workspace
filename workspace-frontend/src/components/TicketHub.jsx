@@ -23,10 +23,12 @@ export default function TicketHub() {
       const response = await authenticatedFetch('/api/v1/tickets');
       if (response.ok) {
         const data = await response.json();
-        const allTickets = [
-          ...(data.nativeTickets || []),
-          ...(data.sharedTickets || [])
-        ];
+        const allTickets = Array.isArray(data)
+          ? data
+          : [
+              ...(data.nativeTickets || []),
+              ...(data.sharedTickets || [])
+            ];
         setTickets(allTickets);
       }
     } catch (err) {
