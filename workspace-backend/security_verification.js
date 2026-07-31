@@ -186,13 +186,17 @@ async function runTests() {
       const data = await res.json();
       const summary = data.digestSummary || '';
       
-      const containsUnsharedKeyword = summary.toLowerCase().includes('latency') || summary.toLowerCase().includes('confidential');
+      // Get unique words from the unshared ticket that are NOT in the shared ticket's title
+      const sharedWords = new Set(sharedTicket.title.toLowerCase().split(/[^a-zA-Z]+/));
+      const unsharedWords = unsharedTicket.title.toLowerCase().split(/[^a-zA-Z]+/).filter(w => w.length > 3 && !sharedWords.has(w));
       
-      if (!containsUnsharedKeyword) {
+      const leakedWord = unsharedWords.find(word => summary.toLowerCase().includes(word));
+      
+      if (!leakedWord) {
         console.log('✅ PASS: Stark AI Digest context does not contain Acme unshared ticket keywords.');
         testResults.push({ description: 'Stark AI Digest context isolation', passed: true });
       } else {
-        console.log('❌ FAIL: Stark AI Digest context leaked Acme private database titles.');
+        console.log(`❌ FAIL: Stark AI Digest context leaked Acme private database keywords (found: "${leakedWord}").`);
         testResults.push({ description: 'Stark AI Digest context isolation', passed: false });
       }
     } else {
